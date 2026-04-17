@@ -1,9 +1,17 @@
 #include "Enemy.h"
 #include <cmath>
 
-Enemy::Enemy(Player* p) : player(p), hp(30), speed(1.0f) {
+Enemy::Enemy(Player* p, int type) : player(p), enemyType(type) {
     x = GetRandomValue(100, 700);
     y = GetRandomValue(100, 500);
+    // Set hp and speed based on enemy type
+    if (type == 0) { // NORMAL
+        hp = 30;
+        speed = 1.0f;
+    } else if (type == 1) { // FAST
+        hp = 20;
+        speed = 1.5f;
+    }
 }
 
 void Enemy::update() {
@@ -19,6 +27,9 @@ void Enemy::update() {
 }
 
 void Enemy::draw() {
-    DrawCircle(x, y, 8, RED);
+    // Set color based on enemy type
+    Color enemyColor = RED;
+    if (enemyType == 1) enemyColor = ORANGE;
+    DrawCircle(x, y, 8, enemyColor);
     DrawText(TextFormat("HP: %d", hp), x - 15, y - 20, 8, WHITE);
 }

@@ -6,17 +6,23 @@
 class Enemy : public Entity {
 private:
     Player* player;
+    // insert ID enemy
+    // NORMAL : 0
+    // FAST : 1
+    // TANK : 2
+    int enemyType;
     int hp;
     float speed;
 public:
     //Constructor
-    Enemy(Player* p);
+    Enemy(Player* p, int type);
     void update() override;
     void draw() override;
     
     // Getters
     int getHp() const { return hp; }
     float getSpeed() const { return speed; }
+    int getEnemyType() const { return enemyType; }
     Player* getPlayer() const { return player; }
     
     // Setters

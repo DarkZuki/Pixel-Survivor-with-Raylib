@@ -53,7 +53,10 @@ int main() {
 
         // Spawn enemies
         if (GetRandomValue(0,100)<3) {
-            Enemy* e = new Enemy(&player);
+            //
+            int type = 0;
+        if (GetRandomValue(0, 100) < 20) type = 1; // 20% chance for FAST    
+            Enemy* e = new Enemy(&player, type);
             enemies.push_back(e);
             entities.push_back(e);
         }
