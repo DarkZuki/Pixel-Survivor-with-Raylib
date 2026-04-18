@@ -10,6 +10,7 @@ private:
     // NORMAL : 0
     // FAST : 1
     // TANK : 2
+    // RANGED : 3
     int enemyType;
     int hp;
     float speed;

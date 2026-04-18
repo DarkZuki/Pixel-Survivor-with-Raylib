@@ -9,11 +9,14 @@ Enemy::Enemy(Player* p, int type) : player(p), enemyType(type) {
         hp = 30;
         speed = 1.0f;
     } else if (type == 1) { // FAST
-        hp = 20;
-        speed = 1.5f;
+        hp = 15;
+        speed = 2.0f;
     } else if (type == 2) { // TANK
-        hp = 70;
-        speed = 0.7f;
+        hp = 100;
+        speed = 0.5f;
+    } else if (type == 3) { // RANGED
+        hp = 30;
+        speed = 0.5f;
     }
 }
 
@@ -34,6 +37,7 @@ void Enemy::draw() {
     Color enemyColor = RED;
     if (enemyType == 1) enemyColor = ORANGE;
     else if (enemyType == 2) enemyColor = BROWN;
+    else if (enemyType == 3) enemyColor = GREEN;
     DrawCircle(x, y, 8, enemyColor);
     DrawText(TextFormat("HP: %d", hp), x - 15, y - 20, 8, WHITE);
 }

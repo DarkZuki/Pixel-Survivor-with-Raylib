@@ -33,6 +33,7 @@ int main() {
     vector<Entity*> entities;
     vector<Enemy*> enemies;
     vector<Bullet*> bullets;
+    float enemyFireTimer=0; // Track cooldown for ranged enemies
 
     entities.push_back(&player);
     Skill* skill = new Skill(&player);
@@ -50,13 +51,42 @@ int main() {
 
         // Update
         for (auto e : entities) e->update();
+        // RANGED ENEMY LOGIC (Type 3)
+            enemyFireTimer += GetFrameTime(); 
+        for (auto e : enemies) {
+            if (e->getEnemyType() == 3) { 
+                // Calculate distance between this enemy and player
+                float d = distance(e->getX(), e->getY(), player.getX(), player.getY());
+                if (d < 250) { 
+                // If within range, stop moving and prepare to shoot
+                    e->setSpeed(0); 
+                    if (enemyFireTimer >= 1.5f) { 
+                        float sX = (player.getX() > e->getX()) ? 15 : -15;
+                        float sY = (player.getY() > e->getY()) ? 15 : -15;
+                // Spawn an enemy bullet targeting the player's current position
+                        Bullet* eb = new Bullet(e->getX() + sX, e->getY() + sY, player.getX(), player.getY());
+                        eb->setIsEnemyBullet(true);
+                        bullets.push_back(eb);
+                        entities.push_back(eb);
+                    }
+                } else {
+                // If player is far away, resume chasing
+                    e->setSpeed(0.8f); 
+                }
+            }
+        }
+        // Reset shooting timer after 1.5 seconds
+        if (enemyFireTimer >= 1.5f) enemyFireTimer = 0;
 
         // Spawn enemies
         if (GetRandomValue(0,100)<3) {
-            int type = 0;
-        if (GetRandomValue(0, 100) < 20) type = 1; // 20% chance for FAST    
+            int r=GetRandomValue(0, 100);
+                 int type = 0;
+        // if (r < 45) type = 1;    
+        // if (r < 25) type = 2;  
+        if (r < 10) type = 3; 
+
             Enemy* e = new Enemy(&player, type);
-        if (GetRandomValue(0, 100) < 10) e = new Enemy(&player, 2); // 10% chance for TANK
             enemies.push_back(e);
             entities.push_back(e);
         }
@@ -72,7 +102,7 @@ int main() {
         // Bullet-enemy collisions
         for (size_t i = 0; i < enemies.size(); i++) {
             for (size_t j = 0; j < bullets.size(); j++) {
-                if (distance(bullets[j]->getX(), bullets[j]->getY(), 
+                if (!bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), 
                             enemies[i]->getX(), enemies[i]->getY()) < 15) {
                     enemies[i]->takeDamage(20);
                     bullets[j]->setX(-1000);
@@ -107,7 +137,15 @@ int main() {
                 player.takeDamage(1);
             }
         }
-
+        // Enemy bullet-player collisions
+        for (size_t j =0; j< bullets.size(); j++){
+            if ( bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), player.getX(), player.getY()) < 15) {
+                player.takeDamage(1);
+                removeEntity (entities, bullets[j]);
+                bullets.erase(bullets.begin() + j);
+                j--;
+        }
+    }
         // Draw
         BeginDrawing();
         ClearBackground(BLACK);
