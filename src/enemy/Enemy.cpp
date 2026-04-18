@@ -11,6 +11,9 @@ Enemy::Enemy(Player* p, int type) : player(p), enemyType(type) {
     } else if (type == 1) { // FAST
         hp = 20;
         speed = 1.5f;
+    } else if (type == 2) { // TANK
+        hp = 70;
+        speed = 0.7f;
     }
 }
 
@@ -30,6 +33,7 @@ void Enemy::draw() {
     // Set color based on enemy type
     Color enemyColor = RED;
     if (enemyType == 1) enemyColor = ORANGE;
+    else if (enemyType == 2) enemyColor = BROWN;
     DrawCircle(x, y, 8, enemyColor);
     DrawText(TextFormat("HP: %d", hp), x - 15, y - 20, 8, WHITE);
 }
