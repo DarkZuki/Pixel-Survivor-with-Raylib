@@ -17,7 +17,8 @@ private:
     float laser_cooldown;
     const float laser_cooldown_time = 5.0f; // 5 second cooldown between laser shots
     Vector2 laser_direction;
-
+    Texture2D shurikenTexture; 
+    float selfRotation; // góc tự quay của skill
 public:
     //Constructor
     Skill(Player* p);
@@ -26,7 +27,7 @@ public:
     void activateLaser(Vector2 mousePos);
     bool isLaserActive() const { return is_laser_active; }
     float getLaserCooldown() const { return laser_cooldown; }
-    
+    ~Skill() { UnloadTexture(shurikenTexture); }
     // Getters
     float getAngle() const { return angle; }
     float getRadius() const { return radius; }

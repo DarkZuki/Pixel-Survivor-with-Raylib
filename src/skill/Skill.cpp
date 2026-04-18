@@ -5,10 +5,12 @@ static constexpr float LASER_MAX_CD = 5.0f;
 
 Skill::Skill(Player* p) : player(p) {
     type = SkillType::AUTO_BALLS;
-    damage = 15.0f;     // damage basic
-    radius = 70.0f;     // rudimentary radius for the orbiting balls
+    damage = 10.0f;     // damage basic
+    radius = 50.0f;     // rudimentary radius for the orbiting balls
     angle = 0.0f;
     num_particles = 1;  // start with 1 ball, will increase as player gains EXP
+    selfRotation=0.0f;
+    shurikenTexture=LoadTexture("./shuriken.png");
     //laser
     is_laser_active = false;
     laser_timer=0.0f;
@@ -38,6 +40,7 @@ void Skill::update() {
     y = player->getY();
     num_particles = 1 + (player->getExp() / 1000);
     angle += 2.5f * GetFrameTime();
+    selfRotation += 15.0f * GetFrameTime(); // Tốc độ tự quay của skill
 
     // 2. Cập nhật thời gian tồn tại của Laser (nếu đang bắn)
     if (is_laser_active) {
@@ -60,10 +63,19 @@ void Skill::draw() {
             // Calculate the position of each ball based on the angle and radius
             float p_x = x + cos(p_angle) * radius;
             float p_y = y + sin(p_angle) * radius;
-
-            
-            DrawCircle((int)p_x, (int)p_y, 6, GREEN); 
-            DrawCircleLines((int)p_x, (int)p_y, 8, LIME);
+            //check texture load
+            if (shurikenTexture.id == 0) {
+                DrawCircle((int)p_x, (int)p_y, 5, RED); // Fallback: draw a red circle if texture fails to load
+            } else {
+                // Draw the shuriken texture at the calculated position with rotation
+                DrawTexturePro(shurikenTexture, 
+                    { 0, 0, (float)shurikenTexture.width, (float)shurikenTexture.height },
+                    { p_x, p_y, 24, 24 }, 
+                    { 12, 12 }, 
+                    selfRotation * 57.29f, // Chuyển Radian sang Độ
+                    WHITE);
+                }
+        }
             //draw laser
             if(is_laser_active){
                 DrawLineEx({x, y}, {x + laser_direction.x * laser_length, y + laser_direction.y * laser_length}, 15, SKYBLUE);
@@ -72,4 +84,4 @@ void Skill::draw() {
             }
         }
     }
-}
+
