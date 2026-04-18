@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "raymath.h"
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -111,6 +112,34 @@ int main() {
                 player.addExp(10); // +10 EXP for each monster killed.
                 removeEnemy(entities, enemies, i); // delete enemy and remove from entities list
             }
+            // Laser Beam - Enemy collisions
+            if (skill->isLaserActive()) {
+                for (int i = (int)enemies.size() - 1; i >= 0; i--) {
+                    // Điểm đầu và điểm cuối của tia Laser
+                    Vector2 startPos = { skill->getX(), skill->getY() };
+                    Vector2 mousePos = GetMousePosition();
+                    Vector2 laserDir = Vector2Normalize({ mousePos.x - startPos.x, mousePos.y - startPos.y });
+                    Vector2 endPos = { 
+                        startPos.x + laserDir.x * 400, 
+                        startPos.y + laserDir.y * 400 
+                    };
+
+                    // Dùng hàm có sẵn của Raylib để check va chạm giữa đường thẳng và hình tròn (quái)
+                    if (CheckCollisionCircleLine({enemies[i]->getX(), enemies[i]->getY()}, 15, startPos, endPos)) {
+                        enemies[i]->takeDamage(100); // Damage cực to để tiêu diệt ngay lập tức
+                        
+                        if (enemies[i]->getHp() <= 0) {
+                            player.addExp(10);
+                            removeEnemy(entities, enemies, i);
+                        }
+                    }
+                }
+            }
+
+            // Bấm phím để bắn (ví dụ chuột phải hoặc phím SPACE)
+            if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+                skill->activateLaser(GetMousePosition());
+            }
         }
                 
 
@@ -130,6 +159,11 @@ int main() {
         DrawFPS(10, 10);
         DrawText(TextFormat("HP: %d", player.getHp()), 10, 30, 20, WHITE);
         DrawText(TextFormat("EXP: %d", player.getExp()), 10, 60, 20, WHITE);
+        if (skill->getLaserCooldown() > 0) {
+            DrawText(TextFormat("Laser CD: %.1fs", skill->getLaserCooldown()), 10, 90, 20, RED);
+        } else {
+            DrawText("LASER READY! (Right Click)", 10, 90, 20, GREEN);
+        }
         EndDrawing();
     }
 

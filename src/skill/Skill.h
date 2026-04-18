@@ -14,6 +14,8 @@ private:
     bool is_laser_active;
     float laser_length;
     float laser_timer;
+    float laser_cooldown;
+    const float laser_cooldown_time = 5.0f; // 5 second cooldown between laser shots
     Vector2 laser_direction;
 
 public:
@@ -23,6 +25,7 @@ public:
     void draw() override;
     void activateLaser(Vector2 mousePos);
     bool isLaserActive() const { return is_laser_active; }
+    float getLaserCooldown() const { return laser_cooldown; }
     
     // Getters
     float getAngle() const { return angle; }
