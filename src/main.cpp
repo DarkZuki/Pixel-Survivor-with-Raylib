@@ -8,6 +8,7 @@
 #include "enemy/Enemy.h"
 #include "skill/Skill.h"
 #include "bullet/Bullet.h"
+#include "Item/Item.h"
 using namespace std;
 
 float distance(float x1, float y1, float x2, float y2) {
@@ -33,6 +34,7 @@ int main() {
     vector<Entity*> entities;
     vector<Enemy*> enemies;
     vector<Bullet*> bullets;
+    vector<Item*> items;
     float enemyFireTimer=0; // Track cooldown for ranged enemies
 
     entities.push_back(&player);
@@ -108,7 +110,14 @@ int main() {
                     bullets[j]->setX(-1000);
                     
                     if (enemies[i]->getHp() <= 0) {
-                        player.addExp(10);
+                        int val = 10;
+                        int type = enemies[i]->getEnemyType();
+                        if (type == 1) val = 15;
+                        if (type == 2) val = 25;
+                        if (type == 3) val = 20;
+                        Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), val);
+                        items.push_back(item);
+                        entities.push_back(item);
                         removeEntity(entities, bullets[j]);
                         removeEnemy(entities, enemies, i);
                         i--;
@@ -118,7 +127,7 @@ int main() {
             }
         }
 
-        // Skill-enemy collisions
+       // Skill-enemy collisions
         for (int i = (int)enemies.size() - 1; i >= 0; i--) {
             if (distance(skill->getX(), skill->getY(), 
                         enemies[i]->getX(), enemies[i]->getY()) < 15) {
@@ -137,6 +146,7 @@ int main() {
                 player.takeDamage(1);
             }
         }
+
         // Enemy bullet-player collisions
         for (size_t j =0; j< bullets.size(); j++){
             if ( bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), player.getX(), player.getY()) < 15) {
@@ -144,6 +154,24 @@ int main() {
                 removeEntity (entities, bullets[j]);
                 bullets.erase(bullets.begin() + j);
                 j--;
+        }
+        // Item collection
+        for (size_t k =0; k < items.size(); k++){
+            float dist = distance(player.getX(), player.getY(), items[k]->getX(), items[k]->getY());
+            if (dist < 20){
+                int pointsEarned = items[k]->getExpValue();
+                player.addExp(pointsEarned);
+                removeEntity(entities, items[k]);
+                delete items[k];
+                items.erase(items.begin() + k);
+                k--;
+            }
+            else if (items[k]->isExpired()) {
+                removeEntity(entities, items[k]);
+                delete items[k];
+                items.erase(items.begin() + k);
+                k--;
+            }
         }
     }
         // Draw
