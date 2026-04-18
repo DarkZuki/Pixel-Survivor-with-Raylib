@@ -87,15 +87,32 @@ int main() {
 
         // Skill-enemy collisions
         for (int i = (int)enemies.size() - 1; i >= 0; i--) {
-            if (distance(skill->getX(), skill->getY(), 
-                        enemies[i]->getX(), enemies[i]->getY()) < 15) {
-                enemies[i]->takeDamage(10);
-                if (enemies[i]->getHp() <= 0) {
-                    player.addExp(10);
-                    removeEnemy(entities, enemies, i);
+            bool is_enemy_hit = false;
+
+            // Check collision with each orbiting ball of the skill
+            for (int j = 0; j < skill->getNumParticles(); j++) {
+                
+                // calculate the position of the ball 
+                
+                float p_angle = skill->getAngle() + (j * 2.0f * PI / skill->getNumParticles());
+                float p_x = skill->getX() + cos(p_angle) * skill->getRadius();
+                float p_y = skill->getY() + sin(p_angle) * skill->getRadius();
+
+                // Check collision between ball j and enemy i
+                if (distance(p_x, p_y, enemies[i]->getX(), enemies[i]->getY()) < 15) {
+                    enemies[i]->takeDamage((int)skill->getDamage()); 
+                    is_enemy_hit = true;
+                    break; // Nếu quái đã trúng 1 viên rồi thì không cần check các viên khác trong cùng frame
                 }
             }
+
+            // Nếu quái chết sau khi trúng bi
+            if (is_enemy_hit && enemies[i]->getHp() <= 0) {
+                player.addExp(10); // +10 EXP for each monster killed.
+                removeEnemy(entities, enemies, i); // delete enemy and remove from entities list
+            }
         }
+                
 
         // Player-enemy collisions
         for (auto enemy : enemies) {
