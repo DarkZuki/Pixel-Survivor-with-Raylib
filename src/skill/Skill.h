@@ -2,7 +2,7 @@
 #include "../core/Entity.h"
 #include "../player/Player.h"
 #include "raylib.h"
-enum class SkillType{ AUTO_BALLS };
+enum class SkillType{ AUTO_BALLS, LASER_BEAM, THUNDER_STRIKE, SHURIKEN };
 class Skill : public Entity {
 private:
     SkillType type;
@@ -19,6 +19,10 @@ private:
     Vector2 laser_direction;
     Texture2D shurikenTexture; 
     float selfRotation; // góc tự quay của skill
+    float thunder_timer;
+    float thunder_cooldown;
+    int thunder_strikes;
+    float thunder_damage;
 public:
     //Constructor
     Skill(Player* p);
@@ -28,6 +32,7 @@ public:
     bool isLaserActive() const { return is_laser_active; }
     float getLaserCooldown() const { return laser_cooldown; }
     ~Skill() { UnloadTexture(shurikenTexture); }
+    void triggerThunder(vector<Enemy*>& enemies);//thunder strike
     // Getters
     float getAngle() const { return angle; }
     float getRadius() const { return radius; }

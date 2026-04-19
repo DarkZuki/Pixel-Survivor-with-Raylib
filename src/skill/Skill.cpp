@@ -16,6 +16,10 @@ Skill::Skill(Player* p) : player(p) {
     laser_timer=0.0f;
     laser_length=400.0f;
     laser_cooldown=0.0f;
+    thunder_timer=0.0f;
+    thunder_cooldown=1.0f;
+    thunder_strikes=3;
+    thunder_damage=30.0f;
 }
 
 void Skill::activateLaser(Vector2 mousePos) {
@@ -51,6 +55,25 @@ void Skill::update() {
     // 3. Giảm thời gian hồi chiêu (Cooldown) mỗi khung hình
     if (laser_cooldown > 0) {
         laser_cooldown -= GetFrameTime();
+    }
+    // 4. Cập nhật thời gian cho Thunder Strike
+    thunder_level = player->getExp()/1000;
+    if(thunder_level>4) thunder_level=4;
+    thunder_damage=30.0f+thunder_level*10.0f;
+    thunder_timer += GetFrameTime();
+}
+void Skill::triggerThunder(vector<Enemy*>& enemies){
+    if(enemies.empty()||thunder_timer< thunder_cooldown) return; // Nếu không có kẻ địch hoặc chưa hết cooldown thì không kích hoạt
+    int num_bolts=1+thunder_level;
+    for (int i=0;i<num_bolts;i++){
+        if(enemies.empty()) break; // Nếu đã hết kẻ địch thì dừng lại
+        //pick random enemy
+        int random_Index=GetRandomValue(0,(int)enemies.size()-1);
+        Enemy* target=enemies[random_Index];
+        target->takeDamage(thunder_damage);
+        // Hiển thị hiệu ứng sét đánh vào kẻ địch
+        DrawLineEx({target->getX(), target->getY()-100}, {target->getX(), target->getY()}, 5, YELLOW);
+        DrawCircle((int)target->getX(), (int)target->getY(), 20, YELLOW);
     }
 }
 
