@@ -36,6 +36,7 @@ int main() {
     vector<Bullet*> bullets;
     vector<Item*> items;
     float enemyFireTimer=0; // Track cooldown for ranged enemies
+    float spawnTimer = 0.0f; // Track time for spawning enemies
 
     entities.push_back(&player);
     Skill* skill = new Skill(&player);
@@ -81,16 +82,34 @@ int main() {
         if (enemyFireTimer >= 1.5f) enemyFireTimer = 0;
 
         // Spawn enemies
-        if (GetRandomValue(0,100)<3) {
-            int r=GetRandomValue(0, 100);
-                 int type = 0;
-        if (r < 45) type = 1;    
-        if (r < 25) type = 2;  
-        if (r < 10) type = 3; 
-
+        // Spawn logic: Every second, spawn an enemy at a random angle around the player, at a fixed radius
+        const float FIXEL_SPAWN_RADIUS = 400.0f;
+        spawnTimer += GetFrameTime();
+        if (spawnTimer >= 1.0f) {
+            float randomAngle = GetRandomValue(0, 360) * (PI / 180.0f);
+            float spawnX = player.getX() + cos(randomAngle) * FIXEL_SPAWN_RADIUS;
+            float spawnY = player.getY() + sin(randomAngle) * FIXEL_SPAWN_RADIUS;
+        // Determine enemy type based on random value
+        int r=GetRandomValue(0, 100);
+        int type = 0;
+        if (r < 40) {
+            type = 0; // 40% chance for NORMAL
+        }   
+        else if (r < 70) {
+            type = 2; // 30% chance for FAST
+        }  
+        else if (r < 90) {
+            type = 1; // 20% chance for TANK
+        }
+        else {
+            type = 3; // 10% chance for RANGED
+        } 
             Enemy* e = new Enemy(&player, type);
+            // Set spawn position based on random angle and fixed radius from player
+            e->setPosition(spawnX, spawnY);
             enemies.push_back(e);
             entities.push_back(e);
+            spawnTimer = 0.0f;
         }
 
         // Shoot bullets
@@ -188,3 +207,4 @@ int main() {
     CloseWindow();
     return 0;
 }
+ 
