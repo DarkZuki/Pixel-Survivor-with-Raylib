@@ -18,7 +18,7 @@ Skill::Skill(Player* p) : player(p) {
     laser_cooldown=0.0f;
     //thunder strike
     thunder_timer=0.0f;
-    thunder_cooldown=1.0f;
+    thunder_cooldown=5.0f;
     thunder_level=0;
     thunder_damage=30.0f;
     thunderTexture=LoadTexture("./thunderdungdung.png");

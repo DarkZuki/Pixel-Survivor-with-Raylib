@@ -314,9 +314,9 @@ int main() {
         // Display survival time in MM:SS format
         DrawText(TextFormat("Time: %02d:%02d", mins, secs), 330, 20, 25, WHITE);
         if (skill->getLaserCooldown() > 0) {
-            DrawText(TextFormat("Laser CD: %.1fs", skill->getLaserCooldown()), 10, 90, 20, RED);
+            DrawText(TextFormat("Laser CD: %.1fs", skill->getLaserCooldown()), 10, 100, 20, RED);
         } else {
-            DrawText("LASER READY! (Right Click)", 10, 90, 20, GREEN);
+            DrawText("LASER READY! (Right Click)", 10, 100, 20, GREEN);
         }
         EndDrawing();
     }
