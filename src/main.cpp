@@ -63,7 +63,7 @@ int main() {
             DrawText("GAME OVER", 280, 250, 40, RED);
             DrawText(TextFormat("SCORE: %d", player.getScore()), 350, 320, 20, WHITE);
             // Display survival time in MM:SS format
-            DrawText(TextFormat("TIME SURVIVED: %02d:%02d", mins, secs), 305, 360, 20, WHITE);
+            DrawText(TextFormat("TIME SURVIVED: %02d:%02d", mins, secs), 285, 360, 20, WHITE);
             EndDrawing();
             continue;
         }
@@ -193,13 +193,15 @@ int main() {
         }
 
         // Enemy bullet-player collisions
-        for (size_t j =0; j< bullets.size(); j++){
-            if ( bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), player.getX(), player.getY()) < 15) {
+        for (size_t j = 0; j < bullets.size(); j++) {
+            if (bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), player.getX(), player.getY()) < 15) {
                 player.takeDamage(1);
-                removeEntity (entities, bullets[j]);
+                removeEntity(entities, bullets[j]);
                 bullets.erase(bullets.begin() + j);
                 j--;
+            }
         }
+
         // Item collection
         for (size_t k =0; k < items.size(); k++){
             float dist = distance(player.getX(), player.getY(), items[k]->getX(), items[k]->getY());
@@ -222,21 +224,34 @@ int main() {
                 k--;
             }
         }
-    }
+
         // Draw
         BeginDrawing();
         ClearBackground(BLACK);
         for (auto e : entities) e->draw();
         
         DrawFPS(10, 10);
-        DrawText(TextFormat("HP: %d", player.getHp()), 10, 30, 20, WHITE);
-        DrawText(TextFormat("EXP: %d", player.getExp()), 10, 60, 20, WHITE);
-        DrawText(TextFormat("Score: %d", player.getScore()), 10, 90, 20, WHITE);
+        DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 10, 30, 20, WHITE);
+        DrawText(TextFormat("LV: %d", player.getLevel()), 10, 55, 20, YELLOW);
+        
+        // Draw EXP progress bar
+        int expBarWidth = 800;
+        int expBarHeight = 20;
+        int expBarX = 0;
+        int expBarY = 580;
+        float expProgress = (float)player.getExp() / player.getExpToNextLevel();
+        DrawRectangle(expBarX, expBarY, expBarWidth, expBarHeight, DARKGREEN);
+        DrawRectangle(expBarX, expBarY, (int)(expBarWidth * expProgress), expBarHeight, LIME);
+        DrawRectangleLines(expBarX, expBarY, expBarWidth, expBarHeight, WHITE);
+
+        DrawText(TextFormat("EXP: %d/%d", player.getExp(), player.getExpToNextLevel()), 330, 580, 20, SKYBLUE);
+        
+        DrawText(TextFormat("Score: %d", player.getScore()), 10, 80, 20, WHITE);
         // Format time as MM:SS
         int mins = (int)(gameTimer / 60);
         int secs = (int)(gameTimer) % 60;
         // Display survival time in MM:SS format
-        DrawText(TextFormat("Time: %02d:%02d", mins, secs), 10, 120, 20, WHITE);
+        DrawText(TextFormat("Time: %02d:%02d", mins, secs), 330, 20, 25, WHITE);
         EndDrawing();
     }
 
