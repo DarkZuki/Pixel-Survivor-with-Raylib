@@ -24,11 +24,13 @@ Skill::Skill(Player* p) : player(p) {
     thunder_damage=30.0f;
     thunderTexture=LoadTexture("Graphics/thunderdungdung.png");
     //sheild
-    shieldTexture = LoadTexture("Graphics/shield.png"); // Đổi tên file ảnh mày gửi thành shield.png
+    shieldTexture = LoadTexture("Graphics/khiendoitruongmy.png"); // Đổi tên file ảnh mày gửi thành shield.png
     shield_timer = 0;
     lv_shield = 1;
-    UnloadTexture(shieldTexture);
+    
 }
+
+
 
 void Skill::activateLaser(Vector2 mousePos) {
     // Chỉ kích hoạt nếu tia laser cũ đã hết và đã hết thời gian hồi chiêu (5s)
@@ -78,15 +80,16 @@ void Skill::update() {
     shield_timer += GetFrameTime();
     // 1. Spawn Khiên
     if (shield_timer >= cooldown) {
-        int num = (lv_shield >= 4) ? 3 : (lv_shield >= 3 ? 2 : 1);
-        for (int i = 0; i < num; i++) {
-            float angle = GetRandomValue(0, 360) * (PI / 180.0f);
-            float speedVal = 350.0f;
-            float r = (lv_shield == 2 || lv_shield >= 5) ? 25.0f : 15.0f;
-            activeShields.push_back({{x, y}, {cos(angle)*speedVal, sin(angle)*speedVal}, 0, true, r, 0});
-        }
-        shield_timer = 0;
+    int num = (lv_shield >= 4) ? 3 : (lv_shield >= 3 ? 2 : 1);
+    for (int i = 0; i < num; i++) {
+        float randomAngle = (float)GetRandomValue(0, 360) * (PI / 180.0f); 
+        float speedVal = 350.0f;
+        float r = (lv_shield == 2 || lv_shield >= 5) ? 25.0f : 15.0f;
+        
+        activeShields.push_back({{x, y}, {(float)cos(randomAngle)*speedVal, (float)sin(randomAngle)*speedVal}, 0, true, r, 0.0f});
     }
+    shield_timer = 0;
+}
 
     // 2. Di chuyển và Nảy cạnh màn hình
     for (auto& s : activeShields) {
@@ -201,12 +204,13 @@ void Skill::draw() {
 
         }
     for (auto& s : activeShields) {
-    if (s.active && shieldTexture.id > 0) {
-        Rectangle src = {0, 0, (float)shieldTexture.width, (float)shieldTexture.height};
-        Rectangle dest = {s.pos.x, s.pos.y, s.radius * 2.8f, s.radius * 2.8f};
-        Vector2 origin = {(s.radius * 2.8f)/2, (s.radius * 2.8f)/2};
-        DrawTexturePro(shieldTexture, src, dest, origin, s.rotation, WHITE);
-    }
+        if (s.active && shieldTexture.id > 0) {
+            Rectangle src = {0, 0, (float)shieldTexture.width, (float)shieldTexture.height};
+            float drawSize = s.radius * 2.8f;
+            Rectangle dest = {s.pos.x, s.pos.y, drawSize, drawSize};
+            Vector2 origin = {drawSize / 2.0f, drawSize / 2.0f};
+            DrawTexturePro(shieldTexture, src, dest, origin, s.rotation, WHITE);
+        }
     }
     }
 

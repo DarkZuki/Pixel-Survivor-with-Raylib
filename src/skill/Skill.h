@@ -52,6 +52,7 @@ public:
     ~Skill() { 
         UnloadTexture(shurikenTexture);
         UnloadTexture(thunderTexture);
+        UnloadTexture(shieldTexture);
     }
     void triggerThunder(std::vector<Enemy*>& enemies);//thunder strike
     void triggerShieldCollision(std::vector<Enemy*>& enemies);

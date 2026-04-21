@@ -102,7 +102,7 @@ int main() {
         // Spawn logic: Every second, spawn an enemy at a random angle around the player, at a fixed radius
         const float FIXEL_SPAWN_RADIUS = 400.0f;
         spawnTimer += GetFrameTime();
-        if (spawnTimer >= 1.0f) {
+        if (spawnTimer >= 0.00001f) {
             float randomAngle = GetRandomValue(0, 360) * (PI / 180.0f);
             float spawnX = player.getX() + cos(randomAngle) * FIXEL_SPAWN_RADIUS;
             float spawnY = player.getY() + sin(randomAngle) * FIXEL_SPAWN_RADIUS;
