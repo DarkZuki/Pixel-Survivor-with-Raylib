@@ -5,83 +5,47 @@
 #include "raylib.h"
 #include <vector>
 
-// A simple structure to represent any projectile or visual effect
+// Simple projectile structure
 struct WeaponBullet {
     Vector2 pos;
     Vector2 vel;
     float lifetime;
     float radius;
     int damage;
-    int pierce;
     Color color;
-    int type;         // 0: Normal, 1: Boomerang, 2: Orbital, 3: Sword
-    float angle;      // Used for orbital rotation and boomerang spiral
-    float distance;   // Current distance from player for orbital/boomerang
-    bool returning;   // For boomerang
+    int type;         // 0: Normal, 1: Sword slash, 2: Explosion
+    float angle;      // For sword direction or explosion radius
 };
 
-
+// Simple Weapon class with all weapons in one class
 class Weapon {
-protected:
-    float fireRate;
-    float timer;
-    int damage;
-    float projectileSpeed;
-    float range;
-    float lifetime;
-    int pierce;
-
-public:
-    Weapon(int dmg, float rate, float speed, float rng, float life, int p);
-    virtual ~Weapon() {}
-
-    virtual void update(Player& player, const std::vector<Enemy*>& enemies, std::vector<WeaponBullet>& bullets,
-        Vector2 targetPos, bool isAttacking);
-    virtual void attack(Player& player, const std::vector<Enemy*>& enemies, std::vector<WeaponBullet>& bullets,
-        Vector2 targetPos) = 0;
-
-    void setStats(int dmg, float rate, float speed, float rng, float life, int p);
-};
-
-class Sword : public Weapon {
-public:
-    Sword();
-    void attack(Player& player, const std::vector<Enemy*>& enemies, std::vector<WeaponBullet>& bullets,
-        Vector2 targetPos) override;
-};
-
-class MagicWand : public Weapon {
-public:
-    MagicWand();
-    void attack(Player& player, const std::vector<Enemy*>& enemies, std::vector<WeaponBullet>& bullets,
-        Vector2 targetPos) override;
-};
-
-class Knife : public Weapon {
-public:
-    Knife();
-    void attack(Player& player, const std::vector<Enemy*>& enemies, std::vector<WeaponBullet>& bullets,
-        Vector2 targetPos) override;
-};
-
-class SpellBook : public Weapon {
-public:
-    SpellBook();
-    void attack(Player& player, const std::vector<Enemy*>& enemies, std::vector<WeaponBullet>& bullets,
-        Vector2 targetPos) override;
-};
-
-class OrbitalShield : public Weapon {
 private:
-    bool spawned;
+    float cooldown;      // Time between attacks
+    int damage;          // Base damage
+    float speed;         // Projectile speed
+    float range;         // Attack range
+    int weaponType;      // 0: Sword, 1: MagicWand, 2: Knife, 3: SpellBook
+    float timer;         // Current cooldown timer
+
 public:
-    OrbitalShield();
-    void update(Player& player, const std::vector<Enemy*>& enemies, std::vector<WeaponBullet>& bullets,
-        Vector2 targetPos, bool isAttacking) override;
-    void attack(Player& player, const std::vector<Enemy*>& enemies, std::vector<WeaponBullet>& bullets,
-        Vector2 targetPos) override;
+    // Constructor - just pass the weapon type
+    Weapon(int type);
+    
+    // Update weapon (handles cooldown and attacks)
+    void update(Player& player, const std::vector<Enemy*>& enemies, 
+                std::vector<WeaponBullet>& bullets, Vector2 targetPos, bool isAttacking);
+    
+    // Getters
+    int getWeaponType() const { return weaponType; }
+    const char* getName() const;
+    
+private:
+    // Internal attack method
+    void attack(Player& player, const std::vector<Enemy*>& enemies,
+                std::vector<WeaponBullet>& bullets, Vector2 targetPos);
 };
 
-
-void updateBullets(Player& player, std::vector<WeaponBullet>& bullets, std::vector<Enemy*>& enemies, float dt);
+// Global functions for bullet management
+void updateBullets(Player& player, std::vector<WeaponBullet>& bullets, 
+                   std::vector<Enemy*>& enemies, float dt);
 void drawBullets(const std::vector<WeaponBullet>& bullets);

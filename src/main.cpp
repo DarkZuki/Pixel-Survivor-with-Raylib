@@ -47,10 +47,10 @@ int main() {
     entities.push_back(skill);
 
     // Create weapons
-    Sword sword;
-    MagicWand magicWand;
-    Knife knife;
-    SpellBook spellBook;
+    Weapon sword(0);      // Sword
+    Weapon magicWand(1);  // Magic Wand
+    Weapon knife(2);      // Knife
+    Weapon spellBook(3);  // Spell Book
     Weapon* currentWeapon = &sword; // Start with sword
 
     while (!WindowShouldClose()) {
@@ -271,11 +271,7 @@ int main() {
         drawBullets(weaponBullets); // Draw weapon bullets
         
         // Draw current weapon name
-        const char* weaponName = "Sword";
-        if (currentWeapon == &magicWand) weaponName = "Magic Wand";
-        else if (currentWeapon == &knife) weaponName = "Knife";
-        else if (currentWeapon == &spellBook) weaponName = "Spell Book";
-        DrawText(TextFormat("Weapon: %s (1-4 to switch)", weaponName), 10, 105, 15, GREEN);
+        DrawText(TextFormat("Weapon: %s (1-4 to switch)", currentWeapon->getName()), 10, 105, 15, GREEN);
         
         DrawFPS(10, 10);
         DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 10, 30, 20, WHITE);
