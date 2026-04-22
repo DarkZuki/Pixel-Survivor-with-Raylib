@@ -39,6 +39,13 @@ int main() {
     float spawnTimer = 0.0f; // Track time for spawning enemies
     float gameTimer = 0.0f; // Track total survival time
     float hpSpawnTimer = 0.0f; // Track time for spawning HP items
+    
+    // Camera setup
+    Camera2D camera = { 0 };
+    camera.target = (Vector2){ player.getX(), player.getY() };
+    camera.offset = (Vector2){ 400, 300 }; // Center of screen
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f;
 
     entities.push_back(&player);
     Skill* skill = new Skill(&player);
@@ -69,6 +76,10 @@ int main() {
         }
         gameTimer += GetFrameTime(); // Update game timer
 
+        // Convert mouse position from screen coordinates to world coordinates
+        Vector2 mouseScreenPos = GetMousePosition();
+        Vector2 attackTarget = GetScreenToWorld2D(mouseScreenPos, player.getCamera());
+        
         // Update
         for (auto e : entities) e->update();
         // RANGED ENEMY LOGIC (Type 3)
@@ -131,8 +142,7 @@ int main() {
 
         // Shoot bullets
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            Vector2 m = GetMousePosition();
-            Bullet* b = new Bullet(player.getX(), player.getY(), m.x, m.y);
+            Bullet* b = new Bullet(player.getX(), player.getY(), attackTarget.x, attackTarget.y);
             bullets.push_back(b);
             entities.push_back(b);
         }
@@ -228,8 +238,17 @@ int main() {
         // Draw
         BeginDrawing();
         ClearBackground(BLACK);
+        
+        // Begin camera mode to follow player
+        BeginMode2D(player.getCamera());
+        
+        // Draw all game entities with camera applied
         for (auto e : entities) e->draw();
         
+        // End camera mode
+        EndMode2D();
+        
+        // Draw UI elements (outside camera mode so they stay fixed on screen)
         DrawFPS(10, 10);
         DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 10, 30, 20, WHITE);
         DrawText(TextFormat("LV: %d", player.getLevel()), 10, 55, 20, YELLOW);
