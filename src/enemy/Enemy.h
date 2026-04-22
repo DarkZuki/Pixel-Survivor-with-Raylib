@@ -6,6 +6,7 @@
 class Enemy : public Entity {
 private:
     Player* player;
+    Texture2D *texture;
     // insert ID enemy
     // NORMAL : 0
     // FAST : 1
@@ -14,9 +15,11 @@ private:
     int enemyType;
     int hp;
     float speed;
+    // tinh goc xoay
+    float rotation;
 public:
     //Constructor
-    Enemy(Player* p, int type);
+    Enemy(Player* p, int type, Texture2D* tex);
     void update() override;
     void draw() override;
     

@@ -29,8 +29,13 @@ void removeEnemy(vector<Entity*>& entities, vector<Enemy*>& enemies, int idx) {
 
 int main() {
     InitWindow(800, 600, "PIXEL SURVIVOR");
+    Texture2D enemySprites[4];
+    enemySprites[0] = LoadTexture("Graphics/Ultron-Perler-Bead-Pattern-removebg-preview.png");
+    enemySprites[1] = LoadTexture("GGraphics/Venom-removebg-preview.png");
+    enemySprites[2] = LoadTexture("Graphics/Supreme-Leader-Ultron-removebg-preview.png");
+    enemySprites[3] = LoadTexture("Graphics/Loki-removebg-preview.png");
     SetTargetFPS(60);
-
+ 
     Player player;
     WaveManager waveSystem;
     vector<Entity*> entities;
@@ -40,6 +45,13 @@ int main() {
     float enemyFireTimer=0; // Track cooldown for ranged enemies
     float spawnTimer = 0.0f; // Track time for spawning enemies
     float hpSpawnTimer = 0.0f; // Track time for spawning HP items
+    
+    // Camera setup
+    Camera2D camera = { 0 };
+    camera.target = (Vector2){ player.getX(), player.getY() };
+    camera.offset = (Vector2){ 400, 300 }; // Center of screen
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f;
 
     entities.push_back(&player);
     Skill* skill = new Skill(&player);
@@ -87,6 +99,10 @@ int main() {
         float dt = GetFrameTime();
         waveSystem.update(dt);
 
+        // Convert mouse position from screen coordinates to world coordinates
+        Vector2 mouseScreenPos = GetMousePosition();
+        Vector2 attackTarget = GetScreenToWorld2D(mouseScreenPos, player.getCamera());
+        
         // Update
         for (auto e : entities) e->update();
         // RANGED ENEMY LOGIC (Type 3)
@@ -127,7 +143,7 @@ int main() {
             float spawnY = player.getY() + sin(randomAngle) * FIXEL_SPAWN_RADIUS;
         // Determine enemy type based on random value
             int type =waveSystem.getRandomEnemyType();
-            Enemy* e = new Enemy(&player, type);
+            Enemy* e = new Enemy(&player, type, &enemySprites[type]);
             // Set spawn position based on random angle and fixed radius from player
             e->setPosition(spawnX, spawnY);
             float multiplier = waveSystem.getStatMultiplier();
@@ -139,8 +155,7 @@ int main() {
 
         // Shoot bullets
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            Vector2 m = GetMousePosition();
-            Bullet* b = new Bullet(player.getX(), player.getY(), m.x, m.y);
+            Bullet* b = new Bullet(player.getX(), player.getY(), attackTarget.x, attackTarget.y);
             bullets.push_back(b);
             entities.push_back(b);
         }
@@ -236,8 +251,17 @@ int main() {
         // Draw
         BeginDrawing();
         ClearBackground(BLACK);
+        
+        // Begin camera mode to follow player
+        BeginMode2D(player.getCamera());
+        
+        // Draw all game entities with camera applied
         for (auto e : entities) e->draw();
         
+        // End camera mode
+        EndMode2D();
+        
+        // Draw UI elements (outside camera mode so they stay fixed on screen)
         DrawFPS(10, 10);
         DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 10, 30, 20, WHITE);
         DrawText(TextFormat("LV: %d", player.getLevel()), 10, 55, 20, YELLOW);
@@ -265,7 +289,10 @@ int main() {
         DrawText(TextFormat("Wave: %d", waveSystem.getCurrentWaveNumber()), 355, 50, 22, waveColor);
         EndDrawing();
     }
-
+    // giải phóng bộ nhớ 
+    for (int i=0; i<4 ; i++){
+        UnloadTexture(enemySprites[i]);
+    }
     CloseWindow();
     return 0;
 }
