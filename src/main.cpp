@@ -79,7 +79,6 @@ int main() {
         // Convert mouse position from screen coordinates to world coordinates
         Vector2 mouseScreenPos = GetMousePosition();
         Vector2 attackTarget = GetScreenToWorld2D(mouseScreenPos, player.getCamera());
-        bool isAttacking = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
         
         // Update
         for (auto e : entities) e->update();
@@ -143,8 +142,7 @@ int main() {
 
         // Shoot bullets
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            Vector2 m = GetMousePosition();
-            Bullet* b = new Bullet(player.getX(), player.getY(), m.x, m.y);
+            Bullet* b = new Bullet(player.getX(), player.getY(), attackTarget.x, attackTarget.y);
             bullets.push_back(b);
             entities.push_back(b);
         }
