@@ -30,14 +30,24 @@ void Enemy::update() {
     if (dist > 0.1f) {
         // tạo logic dùng lại để bắn của quái RANGED
         if (enemyType == 3 && dist < stoppingDistance){
-            // đã vào tầm bắn không cộng thêm nữa
+            // đã vào tầm bắn , tự động  nạp đạn
+            fireTimer +=GetFrameTime();
         } else {
         x += (dx / dist) * speed;
         y += (dy / dist) * speed;
+        fireTimer = 0.0f;
         }
         // cập nhật góc quay
         rotation = atan2f(dy,dx) * (180.0f / PI);
     }
+}
+// kiem tra dieu kien ra dan cua quai RANGED
+bool Enemy::canShoot(){
+    if (enemyType == 3 && fireTimer >=1.5){
+        fireTimer = 0.0f; // Reset lại sau khi xác nhận bắn
+        return true;
+    }
+    return false;
 }
 
 void Enemy::draw() {

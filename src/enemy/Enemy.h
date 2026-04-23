@@ -19,11 +19,14 @@ private:
     float rotation;
     // tạo cư ly khai hỏa riêng biệt
     float stoppingDistance;
+    // tạo đồng hồ nạp đạn riêng biệt cho từng con quái
+    float fireTimer = 0.0f;
 public:
     //Constructor
     Enemy(Player* p, int type, Texture2D* tex);
     void update() override;
     void draw() override;
+    bool canShoot();
     
     // Getters
     int getHp() const { return hp; }

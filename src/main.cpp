@@ -42,7 +42,6 @@ int main() {
     vector<Enemy*> enemies;
     vector<Bullet*> bullets;
     vector<Item*> items;
-    float enemyFireTimer=0; // Track cooldown for ranged enemies
     float spawnTimer = 0.0f; // Track time for spawning enemies
     float hpSpawnTimer = 0.0f; // Track time for spawning HP items
     int currentDiffID  = -1 ;// trạng thái chờ chọn màn chơi
@@ -128,26 +127,14 @@ int main() {
         // Update
         for (auto e : entities) e->update();
         // RANGED ENEMY LOGIC (Type 3)
-        enemyFireTimer += GetFrameTime(); 
         for (auto e : enemies) {
-            if (e->getEnemyType() == 3) { 
-                // Calculate distance between this enemy and player
-                float d = distance(e->getX(), e->getY(), player.getX(), player.getY());
-                // sửa lại logic bắn đạn
-                if (d < 300.0f) {
-                    if (enemyFireTimer >= 1.5f) { 
+            if (e->canShoot()) { 
                         Bullet* eb = new Bullet(e->getX(), e->getY(), player.getX(), player.getY());
                         eb->setIsEnemyBullet(true);
                         bullets.push_back(eb);
                         entities.push_back(eb);
-                    }
                 } 
             }
-        }
-        // Reset shooting timer after 1.5 seconds
-        if (enemyFireTimer >= 1.5f) {
-            enemyFireTimer = 0;
-        }
 
         // Spawn enemies
         // Spawn logic: Every second, spawn an enemy at a random angle around the player, at a fixed radius
