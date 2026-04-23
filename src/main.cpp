@@ -31,7 +31,7 @@ int main() {
     InitWindow(800, 600, "PIXEL SURVIVOR");
     Texture2D enemySprites[4];
     enemySprites[0] = LoadTexture("Graphics/Ultron-Perler-Bead-Pattern-removebg-preview.png");
-    enemySprites[1] = LoadTexture("GGraphics/Venom-removebg-preview.png");
+    enemySprites[1] = LoadTexture("Graphics/Venom-removebg-preview.png");
     enemySprites[2] = LoadTexture("Graphics/Supreme-Leader-Ultron-removebg-preview.png");
     enemySprites[3] = LoadTexture("Graphics/Loki-removebg-preview.png");
     SetTargetFPS(60);
@@ -45,6 +45,8 @@ int main() {
     float enemyFireTimer=0; // Track cooldown for ranged enemies
     float spawnTimer = 0.0f; // Track time for spawning enemies
     float hpSpawnTimer = 0.0f; // Track time for spawning HP items
+    int currentDiffID  = -1 ;// trạng thái chờ chọn màn chơi
+    bool gameStarted = false; // điều kiện để bắt đầu cho quái ra chơi
     
     // Camera setup
     Camera2D camera = { 0 };
@@ -58,6 +60,26 @@ int main() {
     entities.push_back(skill);
 
     while (!WindowShouldClose()) { 
+        if (!gameStarted){
+            // dùng phím chọn qua chế độ chơi nào
+            if (IsKeyPressed(KEY_ONE))   { currentDiffID = 0; gameStarted = true; }
+            if (IsKeyPressed(KEY_TWO))   { currentDiffID = 1; gameStarted = true; }
+            if (IsKeyPressed(KEY_THREE)) { currentDiffID = 2; gameStarted = true; }
+            if (gameStarted){
+                waveSystem.setDifficulty(currentDiffID);
+            }
+            BeginDrawing();
+            ClearBackground(BLACK);
+            DrawText("Select Difficulty Level:", 280, 220, 20, GRAY);
+            DrawText("[1] EASY - Low Density / Weak Enemies", 240, 270, 20, GREEN);
+            DrawText("[2] HARD - Standard Operations", 240, 310, 20, ORANGE);
+            DrawText("[3] HELL - High Density / Elite Enemies", 240, 350, 20, RED);
+        
+            DrawText("Press key to deploy...", 300, 450, 15, DARKGRAY);
+            EndDrawing();
+            continue;
+
+        }
         hpSpawnTimer += GetFrameTime();
         if (hpSpawnTimer >= 10.0f) { // Spawn HP item every 10 seconds
             float randomX = GetRandomValue(50, 750);
@@ -134,22 +156,42 @@ int main() {
 
         // Spawn enemies
         // Spawn logic: Every second, spawn an enemy at a random angle around the player, at a fixed radius
-        const float FIXEL_SPAWN_RADIUS = 400.0f;
+        const float PIXEL_SPAWN_RADIUS = 400.0f;
         if (!waveSystem.isFinished())
         spawnTimer += GetFrameTime();
+        // Calculate Spawn Position
         if (spawnTimer >= waveSystem.getSpawnInterval()) {
             float randomAngle = GetRandomValue(0, 360) * (PI / 180.0f);
-            float spawnX = player.getX() + cos(randomAngle) * FIXEL_SPAWN_RADIUS;
-            float spawnY = player.getY() + sin(randomAngle) * FIXEL_SPAWN_RADIUS;
-        // Determine enemy type based on random value
+            float spawnX = player.getX() + cos(randomAngle) * PIXEL_SPAWN_RADIUS;
+            float spawnY = player.getY() + sin(randomAngle) * PIXEL_SPAWN_RADIUS;
+        // Define Difficulty Multipliers
+            float hpMult = 1.0f;
+            float spdMult = 1.0f;
+            switch (currentDiffID) {
+                case 0:
+                hpMult = 0.8f; spdMult = 0.8f;
+                break;
+                case 1:
+                hpMult = 2.0f; spdMult = 1.1f;
+                break;
+                case 2:
+                hpMult = 5.0f; spdMult = 1.4f;
+                break;
+            }
+        // Create Enemy Object
             int type =waveSystem.getRandomEnemyType();
             Enemy* e = new Enemy(&player, type, &enemySprites[type]);
-            // Set spawn position based on random angle and fixed radius from player
+
+        // Set Position and Apply Multipliers
             e->setPosition(spawnX, spawnY);
+
             float multiplier = waveSystem.getStatMultiplier();
-            e->setHp((int)(e->getHp() * multiplier));// Scale HP based on current wave
+            e->setHp((int)(e->getHp() * multiplier * hpMult));// Multiply both here
+            e->setSpeed(e->getSpeed() * spdMult);  //Add speed multiplier
+        // Add to Management Lists
             enemies.push_back(e);
             entities.push_back(e);
+        // Reset Timer
             spawnTimer = 0.0f;
         }
 

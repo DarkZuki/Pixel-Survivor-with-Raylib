@@ -14,17 +14,19 @@ void WaveManager::update(float deltaTime) {
 float WaveManager::getSpawnInterval() const {
     float baseInterval =  1.0f ;
     int waveNum = currentMilestoneIdx + 1;
-
+    float interval;
     if (waveNum == 4 || waveNum == 8 || waveNum == 12 || waveNum == 16) {
-         return baseInterval / 3.0f; // Halve spawn interval at waves 4, 8, 12, 16 for a spike in difficulty
-    }
+         interval = baseInterval / 3.0f; // Halve spawn interval at waves 4, 8, 12, 16 for a spike in difficulty
+    }else {
     float waveSpeedUp = 1.0f + (currentMilestoneIdx * 0.5f); 
-    float interval = baseInterval / waveSpeedUp;
-    if (interval < 0.5f) {
-        return 0.5f; // Cap minimum spawn interval to prevent it from becoming too fast
+    interval = baseInterval / waveSpeedUp;
+    } 
+    interval = interval * spawnRateMult;
+    if (interval < 0.2f) {
+        return 0.2f; 
     }
         return interval;
-    }
+}
 float WaveManager::getStatMultiplier() const {
     int waveNum = currentMilestoneIdx + 1;
     if (waveNum == 4 || waveNum == 8 || waveNum == 12 || waveNum == 16) {
@@ -57,9 +59,42 @@ int WaveManager::getRandomEnemyType() {
             else if (r < 60) return 1; // 30% FAST
             else if (r < 85) return 2; // 25% TANK
             else return 3; // 15% RANGED
+        
+        }
+        return 0;
+}
 
+void WaveManager::setInternalTimer (float time) {
+    internalTimer = time;
+    if (internalTimer <= 60.0f) {
+        currentMilestoneIdx = 0;
+    } else {
+        currentMilestoneIdx = (int)sqrtf((internalTimer ) / 15.0f) + 1;
     }
-
-
-    return 0; // Mặc định Normal khi cau lệnh sai
+}
+void WaveManager::skipToWave(int waveNumber) {
+    if (waveNumber > 20) {
+        waveNumber = 20; // Cap at max wave
+    }
+    if (waveNumber < 1) {
+        internalTimer = 0.0f;
+        currentMilestoneIdx = 0;
+    } else {
+        currentMilestoneIdx = waveNumber - 1;
+        internalTimer = powf((float)(currentMilestoneIdx - 1), 2) * 15.0f + 60.00f;
+    }
+}
+void WaveManager::setDifficulty(int id) {
+    difficultyID = id;
+    switch (id){
+        case 0:
+        spawnRateMult = 1.5f;
+        break;
+        case 1:
+        spawnRateMult = 1.0f;
+        break;
+        case 2:
+        spawnRateMult = 0.5f;
+        break;
+    }
 }
