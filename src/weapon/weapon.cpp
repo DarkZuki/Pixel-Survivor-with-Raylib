@@ -89,7 +89,7 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
         
         case 3: { // Spell Book - explosive projectile
             Vector2 dir = Vector2Normalize({targetPosition.x - pp.x, targetPosition.y - pp.y});
-            projectiles.push_back({pp, {dir.x*400, dir.y*400}, 2.0f, 8.0f, (float)(weaponDamage + player.getDamage()), PURPLE, 2, 150.0f});
+            projectiles.push_back({pp, {dir.x*400, dir.y*400}, 2.0f, 8.0f, (float)(weaponDamage + player.getDamage()), PURPLE, 2, 50.0f});
             break;
         }
     }
@@ -149,7 +149,7 @@ void drawProjectiles(const std::vector<WeaponProjectile>& projectiles) {
         }
         // Explosion visual (type 2, damage=0 means it's the visual effect)
         else if (projectile.type == 2 && projectile.damage == 0) {
-            DrawCircleV(projectile.position, projectile.angle * 0.3f, Fade(ORANGE, projectile.lifeTime * 3));
+            DrawCircleV(projectile.position, projectile.angle , Fade(ORANGE, projectile.lifeTime * 3));
         }
         // Normal projectiles
         else {

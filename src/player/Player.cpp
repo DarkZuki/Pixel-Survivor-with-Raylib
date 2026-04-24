@@ -1,5 +1,5 @@
 #include "Player.h"
-#include <cmath>
+#include "raymath.h"
 
 Player::Player() {
     x = 400;
@@ -62,8 +62,7 @@ void Player::update() {
     
     // Update facing direction
     if (moveDir.x != 0 || moveDir.y != 0) {
-        float len = sqrtf(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
-        facingDir = {moveDir.x / len, moveDir.y / len};
+        facingDir = Vector2Normalize(moveDir);
     }
 }
 

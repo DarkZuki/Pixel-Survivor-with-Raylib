@@ -15,6 +15,7 @@ private:
     float speed = 3.0f;
     int damage = 10;
     Vector2 facingDir = {1, 0}; // Facing direction
+    Camera2D camera; // Camera for following player
     
 public:
     //Constructor

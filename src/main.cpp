@@ -93,16 +93,13 @@ int main() {
         if (IsKeyPressed(KEY_THREE)) currentWeapon = &knife;
         if (IsKeyPressed(KEY_FOUR)) currentWeapon = &spellBook;
 
-        Vector2 attackTarget = GetMousePosition();
+        Vector2 mouseScreenPos = GetMousePosition();
+        Vector2 attackTarget = GetScreenToWorld2D(mouseScreenPos, player.getCamera());
         bool isAttacking = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
 
         // Update weapons
         currentWeapon->update(player, enemies, weaponProjectiles, attackTarget, isAttacking);
         updateProjectiles(weaponProjectiles, enemies, dt);
-
-        // Convert mouse position from screen coordinates to world coordinates
-        Vector2 mouseScreenPos = GetMousePosition();
-        Vector2 attackTarget = GetScreenToWorld2D(mouseScreenPos, player.getCamera());
         
         // Update
         for (auto e : entities) e->update();
