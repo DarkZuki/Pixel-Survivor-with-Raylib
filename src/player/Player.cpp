@@ -53,12 +53,15 @@ void Player::levelUp() {
 }
 
 void Player::update() {
-    // Movement and facing direction
+    // Movement
     Vector2 moveDir = {0, 0};
     if (IsKeyDown(KEY_W)) { y -= speed; moveDir.y = -1; }
     if (IsKeyDown(KEY_S)) { y += speed; moveDir.y = 1; }
     if (IsKeyDown(KEY_A)) { x -= speed; moveDir.x = -1; }
     if (IsKeyDown(KEY_D)) { x += speed; moveDir.x = 1; }
+    
+    // Update camera to follow player
+    camera.target = (Vector2){ x, y };
     
     // Update facing direction
     if (moveDir.x != 0 || moveDir.y != 0) {

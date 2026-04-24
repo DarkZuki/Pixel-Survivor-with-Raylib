@@ -284,9 +284,6 @@ int main() {
         for (auto e : entities) e->draw();
         drawProjectiles(weaponProjectiles); // Draw weapon projectiles
         
-        // Draw current weapon name
-        DrawText(TextFormat("Weapon: %s (1-4 to switch)", currentWeapon->getName()), 10, 105, 15, GREEN);
-        
         // End camera mode
         EndMode2D();
         
@@ -294,6 +291,9 @@ int main() {
         DrawFPS(10, 10);
         DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 10, 30, 20, WHITE);
         DrawText(TextFormat("LV: %d", player.getLevel()), 10, 55, 20, YELLOW);
+        
+        // Draw current weapon name
+        DrawText(TextFormat("Weapon: %s (1-4 to switch)", currentWeapon->getName()), 10, 105, 15, GREEN);
         
         // Draw EXP progress bar
         int expBarWidth = 800;
