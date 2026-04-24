@@ -24,13 +24,11 @@ private:
     int weaponDamage;
     float attackCooldown;
     float currentCooldownTimer;
-
-    void attack(Player& player, const std::vector<Enemy*>& enemies,
-                std::vector<WeaponProjectile>& projectiles, Vector2 targetPosition);
-
 public:
     Weapon(int type);
     const char* getName() const;
+    void attack(Player& player, const std::vector<Enemy*>& enemies,
+                std::vector<WeaponProjectile>& projectiles, Vector2 targetPosition);
     void update(Player& player, const std::vector<Enemy*>& enemies,
                 std::vector<WeaponProjectile>& projectiles, Vector2 targetPosition, bool isAttacking);
 };
