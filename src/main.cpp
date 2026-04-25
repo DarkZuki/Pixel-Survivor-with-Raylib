@@ -41,7 +41,7 @@ int main() {
     float hpSpawnTimer = 0.0f; // Track time for spawning HP items
 
     entities.push_back(&player);
-    Skill* skill = new Skill(&player);
+    Skill* skill = new Skill(&player, SkillType:LASER_BEAM   );
     entities.push_back(skill);
 
     while (!WindowShouldClose()) { 

@@ -1,44 +1,35 @@
 
 #include "Skill.h"
-#include <cmath> // 
+#include <cmath>
 #include "../enemy/Enemy.h"
 #include <algorithm>
 #include "raymath.h"
 
-static constexpr float LASER_MAX_CD = 5.0f;
 
-Skill::Skill(Player* p) : player(p) {
-    type = SkillType::AUTO_BALLS;
-    damage = 10.0f;     // damage basic
-    radius = 50.0f;     // rudimentary radius for the orbiting balls
-    angle = 0.0f;
-    num_particles = 1;  // start with 1 ball, will increase as player gains EXP
-    selfRotation = 0.0f;
+Skill::Skill(Player* p, SkillType skillType) : player(p), type(skillType) {
+    x = p->getX();
+    y = p->getY();
+    level = 1;
+    
+    // Load Textures (Giữ nguyên assets của mày)
     shurikenTexture = LoadTexture("Graphics/shuriken.png");
+    thunderTexture = LoadTexture("Graphics/thunderdungdung.png");
+    shieldTexture = LoadTexture("Graphics/khiendoitruongmy.png");
+    hammerTexture = LoadTexture("Graphics/buathor.png");
+    axeTexture = LoadTexture("Graphics/riuthor.png");
 
-    //laser
+    // Khởi tạo các timer cơ bản
     is_laser_active = false;
     laser_timer = 0.0f;
-    laser_length = 400.0f;
-    laser_cooldown = 0.0f;
-
-    //thunder strike
+    laser_cooldown_timer = 0.0f;
     thunder_timer = 0.0f;
-    thunder_cooldown = 5.0f;
-    thunder_level = 0;
-    thunder_damage = 30.0f;
-    thunderTexture = LoadTexture("Graphics/thunderdungdung.png");
+    shield_timer = 0.0f;
+    hammer_timer = 0.0f;
+    angle = 0.0f;
+    selfRotation = 0.0f;
 
-    //sheild
-    shieldTexture = LoadTexture("Graphics/khiendoitruongmy.png"); // Đổi tên file ảnh mày gửi thành shield.png
-    shield_timer = 0;
-    lv_shield = 1;
-
-    //bua
-    hammerTexture = LoadTexture("Graphics/buathor.png"); //
-    axeTexture = LoadTexture("Graphics/riuthor.png");    //
-    hammer_timer = 0;
-    lv_hammer = 1;
+    // Cập nhật chỉ số lần đầu tiên
+    updateSkillStats();
 }
 
 Skill::~Skill() {
@@ -49,168 +40,301 @@ Skill::~Skill() {
     UnloadTexture(axeTexture);
 }
 
-void Skill::update() {
-    // 1. logic bám theo người chơi và Auto_ball
-    x = player->getX();
-    y = player->getY();
-
-    // Scale num_particles based on player level (1 particle per level, max 10)
-    num_particles = 1 + (player->getLevel() - 1);
-    if (num_particles > 5) num_particles = 5;
-    
-    angle += 2.5f * GetFrameTime();
-    selfRotation += 15.0f * GetFrameTime(); // Tốc độ tự quay của skill
-
-    // 2. Cập nhật thời gian tồn tại của Laser (nếu đang bắn)
-    if (is_laser_active) {
-        laser_timer -= GetFrameTime();
-        if (laser_timer <= 0) is_laser_active = false;
+void Skill::levelUp() {
+    if (level < 10) {
+        level++;
+        updateSkillStats();
     }
-
-    // 3. Giảm thời gian hồi chiêu (Cooldown) mỗi khung hình
-    if (laser_cooldown > 0) {
-        laser_cooldown -= GetFrameTime();
-    }
-
-    // 4. Cập nhật thời gian cho Thunder Strike
-    // Scale thunder level based on player level (max level 4)
-    thunder_level = player->getLevel();
-    if(thunder_level > 4) thunder_level = 4;
-    thunder_damage = 30.0f + (thunder_level * 10.0f);
-    thunder_timer += GetFrameTime();
-
-    //sheild
-    lv_shield = player->getLevel();
-    float dt = GetFrameTime();
-    float cooldown = (lv_shield == 5) ? 5.0f : 7.0f; // Cooldown giảm khi shield đạt level 7
-    shield_timer += dt;
-
-    if(shield_timer >= cooldown) {
-        int num = 1;
-        if(lv_shield >= 3) num = 2; // Khi shield đạt level 3 thì mỗi lần kích hoạt sẽ tạo 2 khiên
-        if(lv_shield >= 4) num = 3;
-        if(lv_shield >= 5) num = 4;
-
-        for(int i = 0; i < num; i++) {
-            float randomAngle = GetRandomValue(0, 360) * (PI / 180.0f);
-            float speedVal = (lv_shield >= 5) ? 400.0f : 350.0f;
-            float r = 20.0f;
-            activeShields.push_back({
-                {x, y}, 
-                {(float)cos(randomAngle) * speedVal, (float)sin(randomAngle) * speedVal}, 
-                0, true, r, 0.0f
-            });
-        }
-        shield_timer = 0.0f; // Reset timer sau khi tạo khiên mới
-    }
-
-    for (auto& s : activeShields) {
-        if(!s.active) continue;
-        s.pos.x += s.speed.x * dt;
-        s.pos.y += s.speed.y * dt;
-        s.rotation += 500.0f * dt;
-
-        if(s.pos.x < 0 || s.pos.x > 800) { s.speed.x *= -1.0f; s.bounces++; }
-        if(s.pos.y < 0 || s.pos.y > 600) { s.speed.y *= -1.0f; s.bounces++; }
-        
-        int maxB = (lv_shield >= 5) ? 5 : 3;
-        if(s.bounces >= maxB) s.active = false;
-    }
-
-    //bua
-    lv_hammer = player->getLevel(); // Cho level búa đi theo level player
-    hammer_timer += dt;
-
-    if (hammer_timer >= 2.0f) {
-        float shootAngle = (float)GetRandomValue(0, 360) * (PI / 180.0f);
-        float speedVal = 500.0f;
-        
-        // TRUYỀN ĐÚNG THỨ TỰ: pos, speed, active, rotation, isRiu
-        activeHammers.push_back({
-            { x, y },                                   // pos
-            { cosf(shootAngle) * speedVal, sinf(shootAngle) * speedVal }, // speed
-            true,                                       // active
-            shootAngle,                                 // rotation (lưu góc bay)
-            (lv_hammer >= 5)                            // isRiu
-        });
-        hammer_timer = 0;
-    }
-
-    for (auto& h : activeHammers) {
-        if (!h.active) continue;
-        // Bay thẳng tắp
-        h.pos.x += h.speed.x * dt;
-        h.pos.y += h.speed.y * dt;
-
-        // Đi hết bản đồ (ra ngoài lề thì mới xóa)
-        if (h.pos.x < -100 || h.pos.x > 900 || h.pos.y < -100 || h.pos.y > 700) {
-            h.active = false;
-        }
-    }
-    activeHammers.erase(std::remove_if(activeHammers.begin(), activeHammers.end(),
-        [](const Hammer& h){ return !h.active; }), activeHammers.end());
 }
 
-// Hàm bổ trợ để Laser ngắm chuẩn
+void Skill::updateSkillStats() {
+    // Reset chỉ số cơ bản trước khi áp dụng bonus từ level
+    damage = 10.0f;
+    radius = 50.0f;
+    num_particles = 1;
+    laser_length = 400.0f;
+    laser_width = 15.0f;
+    cooldown = 5.0f;
+    is_dual_laser = false;
+    is_hammer_riu = false;
+    num_shields = 1;
+    thunder_chain_count = 0;
+    thunder_cooldown = 5.0f;
+
+    switch (type) {
+        case SkillType::LASER_BEAM:
+            switch (level) {
+                case 10: is_dual_laser = true;
+                case 9:  cooldown *= 0.7f;
+                case 8:  laser_length += 300.0f;
+                case 7:  damage += 30.0f;
+                case 6:  laser_length += 200.0f;
+                case 5:  laser_width += 10.0f;
+                case 4:  cooldown *= 0.8f;
+                case 3:  laser_length += 100.0f;
+                case 2:  damage += 20.0f;
+                case 1:  damage += 5.0f;
+                    break;
+            }
+            break;
+
+        case SkillType::HAMMER:
+            damage = 20.0f;        // Búa cơ bản dame to hơn bi xoay
+            switch (level) {
+                case 10: is_hammer_riu = true; damage += 50.0f;
+                case 9:  damage += 20.0f;
+                case 8:  cooldown *= 0.7f;
+                case 7:  damage += 15.0f;
+                case 6:  damage += 10.0f;
+                case 5:  cooldown *= 0.8f;
+                case 4:  damage += 10.0f;
+                case 3:  cooldown *= 0.9f;
+                case 2:  damage += 5.0f;
+                case 1:  damage += 5.0f;
+                    break;
+            }
+            break;
+
+        case SkillType::SHIELD:
+            // Chỉ số mặc định Level 0
+            damage = 15.0f;
+            cooldown = 7.0f;
+            radius = 20.0f; // Bán kính va chạm của khiên
+            this->num_shields = 1;
+            switch (level) {
+                case 10: num_shields += 1;
+                case 9:  damage += 20.0f;
+                case 8:  cooldown *= 0.7f;
+                case 7:  radius += 10.0f;
+                case 6:  num_shields += 1;
+                case 5:  cooldown *= 0.8f;
+                case 4:  radius += 5.0f;
+                case 3:  num_shields += 1;
+                case 2:  cooldown *= 0.9f;
+                case 1:  damage += 5.0f;
+                    break;
+            }
+            break;
+
+        case SkillType::THUNDER_STRIKE:
+            // Chỉ số mặc định Level 0
+            damage = 30.0f;
+           
+            switch (level) {
+                case 10: this->thunder_chain_count = 3;
+                        this->num_particles = 2;
+                case 9:  thunder_cooldown *= 0.6f;
+                case 8:  damage += 40.0f;
+                case 7:  thunder_cooldown *= 0.7f;
+                case 6:  damage += 30.0f;
+                case 5:  thunder_cooldown *= 0.8f;
+                case 4:  damage += 20.0f;
+                case 3:  thunder_cooldown *= 0.9f;
+                case 2:  damage += 10.0f;
+                case 1:  damage += 10.0f;
+                    break;
+            }
+            break;
+
+        case SkillType::SHURIKEN:
+        case SkillType::AUTO_BALLS:
+            damage = 10.0f;
+            num_particles = 1; 
+            radius = 50.0f;   // Khoảng cách xoay quanh người
+
+            switch (level) {
+                case 10:
+                    num_particles += 2; // Cấp cuối thêm hẳn 2 cái cho máu
+                case 9:
+                    damage += 15.0f;
+                case 8:
+                    radius += 20.0f;    // Xoay vòng rộng hơn
+                case 7:
+                    num_particles += 1;
+                case 6:
+                    damage += 10.0f;
+                case 5:
+                    num_particles += 1;
+                case 4:
+                    damage += 10.0f;
+                case 3:
+                    radius += 10.0f;
+                case 2:
+                    num_particles += 1;
+                case 1:
+                    damage += 5.0f;
+                    break;
+                default:
+                    break;
+            }
+            break;
+}
+}
+// --- HÀM PHỤ TRỢ ---
 Enemy* Skill::findNearestEnemy(const std::vector<Enemy*>& enemies) {
     Enemy* nearest = nullptr;
-    float minD = 1000.0f;
+    float minD = 9999.0f;
     for (auto e : enemies) {
-        float d = Vector2Distance({x, y}, {e->getX(), e->getY()});
+        float d = Vector2Distance({player->getX(), player->getY()}, {e->getX(), e->getY()});
         if (d < minD) { minD = d; nearest = e; }
     }
     return nearest;
 }
 
-void Skill::triggerLaser(std::vector<Enemy*>& enemies) {
-    if (!is_laser_active && laser_cooldown <= 0) {
-        if (enemies.empty()) return;
+void Skill::update() {
+    float dt = GetFrameTime();
+    x = player->getX();
+    y = player->getY();
 
-        Enemy* target = findNearestEnemy(enemies);
-        if (target) {
-            laser_direction = Vector2Normalize({target->getX() - x, target->getY() - y});
-            is_laser_active = true;
-            laser_timer = 0.2f;
-            laser_cooldown = LASER_MAX_CD;
-        }
+    angle += 2.5f * dt;
+    selfRotation += 15.0f * dt;
+
+    if (is_laser_active) {
+        laser_timer -= dt;
+        if (laser_timer <= 0) is_laser_active = false;
+    }
+    if (laser_cooldown_timer > 0) laser_cooldown_timer -= dt;
+    thunder_timer += dt; // QUAN TRỌNG: Cần tăng timer để sét đánh
+    shield_timer += dt;
+    hammer_timer += dt;
+    if (shield_timer >= cooldown) {
+    // Chạy vòng lặp tạo khiên dựa trên số lượng đã tính ở updateSkillStats
+    for (int i = 0; i < this->num_shields; i++) {
+        float randomAngle = GetRandomValue(0, 360) * (PI / 180.0f);
+        float speedVal = (level >= 5) ? 400.0f : 350.0f;
+        
+        activeShields.push_back({
+            {x, y}, 
+            {(float)cos(randomAngle) * speedVal, (float)sin(randomAngle) * speedVal}, 
+            0, true, radius, 0.0f
+        });
+    }
+    shield_timer = 0.0f;
+    }
+    for (auto& s : activeShields) {
+        s.pos = Vector2Add(s.pos, Vector2Scale(s.speed, dt));
+        s.rotation += 500.0f * dt;
+    }
+    for (auto& h : activeHammers) {
+        h.pos = Vector2Add(h.pos, Vector2Scale(h.speed, dt));
+    }
+}
+
+// Các hàm Trigger sát thương
+void Skill::triggerLaser(std::vector<Enemy*>& enemies) {
+    if (is_laser_active || laser_cooldown_timer > 0 || enemies.empty()) return;
+    Enemy* target = findNearestEnemy(enemies);
+    if (target) {
+        laser_direction = Vector2Normalize(Vector2Subtract({target->getX(), target->getY()}, {x, y}));
+        is_laser_active = true;
+        laser_timer = 0.2f;
+        laser_cooldown_timer = 5.0f; // Sẽ scale theo level sau
     }
 }
 
 void Skill::triggerThunder(std::vector<Enemy*>& enemies) {
-    if(enemies.empty() || thunder_timer < thunder_cooldown) return; 
-    int num_bolts = 1 + thunder_level;
-    for (int i = 0; i < num_bolts; i++) {
-        if(enemies.empty()) break; 
+    if (enemies.empty() || thunder_timer < thunder_cooldown) return;
+
+    std::vector<Enemy*> hitList; // Danh sách các con đã bị sét đánh để không nảy trùng
+
+    // 1. Số tia sét đánh từ trời xuống (1 hoặc 2 tia tùy level)
+    for (int i = 0; i < this->num_particles; i++) {
+        if (enemies.empty()) break;
+
+        // Chọn quái ngẫu nhiên chưa bị trúng trong đợt này
         int idx = GetRandomValue(0, (int)enemies.size() - 1);
-        enemies[idx]->takeDamage((int)thunder_damage);
-    }
-    thunder_timer = 0.0f; // Reset timer sau khi kích hoạt
-}
+        Enemy* firstTarget = enemies[idx];
+        
+        firstTarget->takeDamage((int)damage);
+        hitList.push_back(firstTarget);
 
-void Skill::triggerShield(std::vector<Enemy*>& enemies) {}
-void Skill::triggerHammer(std::vector<Enemy*>& enemies) {}
+        // Vẽ tia sét từ trời xuống
+        DrawTexturePro(thunderTexture, { 0, 0, (float)thunderTexture.width, (float)thunderTexture.height }, 
+                       { firstTarget->getX() - 15, firstTarget->getY() - 120, 30, 120 }, { 0, 0 }, 0, WHITE);
 
-void Skill::triggerShieldCollision(std::vector<Enemy*>& enemies) {
-    for (auto& s : activeShields) {
-        if (!s.active) continue;
-        for (auto e : enemies) {
-            if (CheckCollisionCircles(s.pos, s.radius, {e->getX(), e->getY()}, 15)) {
-                e->takeDamage((lv_shield >= 2) ? 40 : 20);
-                s.speed.x *= -1.0f;
-                s.speed.y *= -1.0f;
-                s.bounces++;
-                break;
+        // 2. Nếu đạt Level 10 thì kích hoạt Sét Lan từ mỗi tia sét chính
+        if (this->thunder_chain_count > 0) {
+            Enemy* lastTarget = firstTarget;
+
+            for (int j = 0; j < this->thunder_chain_count; j++) {
+                Enemy* nextTarget = nullptr;
+                float minDistance = 150.0f; // Bán kính nảy sét
+
+                for (auto e : enemies) {
+                    // Kiểm tra xem quái đã có trong danh sách trúng đòn chưa
+                    bool alreadyHit = false;
+                    for (auto hit : hitList) if (e == hit) alreadyHit = true;
+                    if (alreadyHit) continue;
+
+                    float d = Vector2Distance({lastTarget->getX(), lastTarget->getY()}, {e->getX(), e->getY()});
+                    if (d < minDistance) {
+                        minDistance = d;
+                        nextTarget = e;
+                    }
+                }
+
+                if (nextTarget) {
+                    nextTarget->takeDamage((int)damage * 0.7f); // Sét nảy gây 70% dame
+                    
+                    // Vẽ tia điện nối giữa 2 con quái
+                    DrawLineEx({lastTarget->getX(), lastTarget->getY()}, {nextTarget->getX(), nextTarget->getY()}, 3, YELLOW);
+                    
+                    hitList.push_back(nextTarget);
+                    lastTarget = nextTarget;
+                } else break;
             }
         }
     }
+
+    thunder_timer = 0.0f;
+}
+
+void Skill::triggerShieldCollision(std::vector<Enemy*>& enemies) { 
+    for (auto& s : activeShields) {
+        if (!s.active) continue;
+
+        for (auto e : enemies) {
+            // Kiểm tra va chạm vòng tròn giữa Khiên và Quái
+            if (CheckCollisionCircles(s.pos, s.radius, {e->getX(), e->getY()}, 15)) {
+                
+                // Gây sát thương
+                e->takeDamage((int)damage);
+
+                // Logic nảy ngược lại của mày
+                s.speed.x *= -1.0f;
+                s.speed.y *= -1.0f;
+                s.bounces++;
+
+                // Số lần nảy tối đa tăng theo level
+                int maxB = (level >= 5) ? 6 : 3;
+                if (s.bounces >= maxB) s.active = false;
+
+                break; // Một khiên chỉ chạm 1 con mỗi lần nảy
+            }
+        }
+    }
+    // Dọn dẹp khiên đã hết số lần nảy
+    activeShields.erase(std::remove_if(activeShields.begin(), activeShields.end(),
+        [](const Shield& s) { return !s.active; }), activeShields.end());
 }
 
 void Skill::triggerHammerCollision(std::vector<Enemy*>& enemies) {
-    for (auto& h : activeHammers) {
+     for (auto& h : activeHammers) {
         if (!h.active) continue;
+
         for (auto e : enemies) {
-            if (CheckCollisionCircles(h.pos, 30, {e->getX(), e->getY()}, 15)) {
-                e->takeDamage((int)damage * 2); // Búa phải đau gấp đôi bi xoay
+            // Tính khoảng cách bình phương cho nhanh (giống code cũ của mày)
+            float dx = h.pos.x - e->getX();
+            float dy = h.pos.y - e->getY();
+            float distSq = dx * dx + dy * dy;
+
+            // Hitbox búa to hơn bi xoay (40.0f)
+            if (distSq < 40.0f * 40.0f) {
+                // Búa nện đau hơn, và nếu là Rìu (lv10) thì dame cực to
+                float hammerDamage = h.isRiu ? damage * 5 : damage * 2;
+                e->takeDamage((int)hammerDamage);
+                
+                // Lưu ý: Búa bay xuyên thấu nên không set h.active = false ở đây
             }
         }
     }
@@ -228,10 +352,21 @@ void Skill::draw() {
             }
         }
     }
-    if(is_laser_active) {
-        Vector2 end = {x + laser_direction.x * laser_length, y + laser_direction.y * laser_length};
-        DrawLineEx({x, y}, end, 15, SKYBLUE);
-        DrawLineEx({x, y}, end, 5, WHITE); // Hiệu ứng lõi trắng
+   if (is_laser_active) {
+        // Tia chính (hướng về phía quái)
+        Vector2 endPos = Vector2Add({x, y}, Vector2Scale(laser_direction, laser_length));
+        DrawLineEx({x, y}, endPos, laser_width, SKYBLUE);
+        DrawLineEx({x, y}, endPos, laser_width / 3.0f, WHITE); // Lõi trắng
+
+        // Nếu đạt Level 10: Vẽ thêm tia đối nghịch
+        if (is_dual_laser) {
+            // Đảo ngược hướng bằng cách nhân với -1
+            Vector2 reverseDir = Vector2Scale(laser_direction, -1.0f);
+            Vector2 endPosReverse = Vector2Add({x, y}, Vector2Scale(reverseDir, laser_length));
+            
+            DrawLineEx({x, y}, endPosReverse, laser_width, SKYBLUE);
+            DrawLineEx({x, y}, endPosReverse, laser_width / 3.0f, WHITE);
+        }
     }
     for (auto& s : activeShields) {
         if (s.active && shieldTexture.id > 0) {
