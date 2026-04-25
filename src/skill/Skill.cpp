@@ -212,11 +212,28 @@ void Skill::update() {
     shield_timer = 0.0f;
     }
     for (auto& s : activeShields) {
-        s.pos = Vector2Add(s.pos, Vector2Scale(s.speed, dt));
-        s.rotation += 500.0f * dt;
+        if (s.active) {
+            // PHẢI CÓ DÒNG NÀY THÌ KHIÊN MỚI DI CHUYỂN
+            s.pos.x += s.speed.x * dt;
+            s.pos.y += s.speed.y * dt;
+            s.rotation += 200.0f * dt;
+
+            // Logic nảy bật tường (Màn hình 800x600)
+            if (s.pos.x < 0 || s.pos.x > 800) s.speed.x *= -1;
+            if (s.pos.y < 0 || s.pos.y > 600) s.speed.y *= -1;
+        }
     }
     for (auto& h : activeHammers) {
-        h.pos = Vector2Add(h.pos, Vector2Scale(h.speed, dt));
+        if (h.active) {
+            h.pos.x += h.speed.x * dt;
+            h.pos.y += h.speed.y * dt;
+            h.rotation += 10.0f * dt;
+
+            // Nếu bay ra khỏi màn hình thì tắt đi để hồi chiêu
+            if (h.pos.x < -50 || h.pos.x > 850 || h.pos.y < -50 || h.pos.y > 650) {
+                h.active = false;
+            }
+        }
     }
 }
 
@@ -292,49 +309,24 @@ void Skill::triggerThunder(std::vector<Enemy*>& enemies) {
 void Skill::triggerShieldCollision(std::vector<Enemy*>& enemies) { 
     for (auto& s : activeShields) {
         if (!s.active) continue;
-
         for (auto e : enemies) {
-            // Kiểm tra va chạm vòng tròn giữa Khiên và Quái
-            if (CheckCollisionCircles(s.pos, s.radius, {e->getX(), e->getY()}, 15)) {
-                
-                // Gây sát thương
-                e->takeDamage((int)damage);
-
-                // Logic nảy ngược lại của mày
-                s.speed.x *= -1.0f;
-                s.speed.y *= -1.0f;
-                s.bounces++;
-
-                // Số lần nảy tối đa tăng theo level
-                int maxB = (level >= 5) ? 6 : 3;
-                if (s.bounces >= maxB) s.active = false;
-
-                break; // Một khiên chỉ chạm 1 con mỗi lần nảy
+            // Kiểm tra va chạm giữa Khiên và Quái
+            if (CheckCollisionCircles(s.pos, s.radius, { e->getX(), e->getY() }, 20)) {
+                e->takeDamage((int)damage); // Gây dame ở đây!
+                // Khiên nảy thì không mất đi khi chạm quái
             }
         }
     }
-    // Dọn dẹp khiên đã hết số lần nảy
-    activeShields.erase(std::remove_if(activeShields.begin(), activeShields.end(),
-        [](const Shield& s) { return !s.active; }), activeShields.end());
 }
 
 void Skill::triggerHammerCollision(std::vector<Enemy*>& enemies) {
      for (auto& h : activeHammers) {
         if (!h.active) continue;
-
         for (auto e : enemies) {
-            // Tính khoảng cách bình phương cho nhanh (giống code cũ của mày)
-            float dx = h.pos.x - e->getX();
-            float dy = h.pos.y - e->getY();
-            float distSq = dx * dx + dy * dy;
-
-            // Hitbox búa to hơn bi xoay (40.0f)
-            if (distSq < 40.0f * 40.0f) {
-                // Búa nện đau hơn, và nếu là Rìu (lv10) thì dame cực to
-                float hammerDamage = h.isRiu ? damage * 5 : damage * 2;
-                e->takeDamage((int)hammerDamage);
-                
-                // Lưu ý: Búa bay xuyên thấu nên không set h.active = false ở đây
+            if (CheckCollisionCircles(h.pos, 25, { e->getX(), e->getY() }, 20)) {
+                e->takeDamage((int)damage);
+                // Nếu là búa thường thì có thể biến mất, Rìu thì xuyên thấu
+                if (!h.isRiu) h.active = false; 
             }
         }
     }

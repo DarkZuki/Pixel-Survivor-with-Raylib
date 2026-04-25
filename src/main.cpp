@@ -41,7 +41,7 @@ int main() {
     float hpSpawnTimer = 0.0f; // Track time for spawning HP items
 
     entities.push_back(&player);
-    Skill* skill = new Skill(&player, SkillType:LASER_BEAM   );
+    Skill* skill = new Skill(&player, SkillType::LASER_BEAM);
     entities.push_back(skill);
 
     while (!WindowShouldClose()) { 
@@ -170,12 +170,17 @@ int main() {
                 }
             }
         }
-
-       // Skill-enemy collisions
+        
+        float dt = GetFrameTime();
+        player.update();
+        skill->update(); // CỰC KỲ QUAN TRỌNG
+       // Skill logic
         skill->triggerLaser(enemies);
         skill->triggerThunder(enemies);
-        skill->triggerHammer(enemies);
-        skill->triggerShield(enemies);
+        
+        // Va chạm đặc biệt của Shield và Hammer
+        skill->triggerShieldCollision(enemies);
+        skill->triggerHammerCollision(enemies);
         
 
 
