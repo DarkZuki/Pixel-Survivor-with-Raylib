@@ -33,10 +33,6 @@ private:
     bool doubleHit;
 
     void updateWeaponStats();
-    void updateHammerStats();
-    void updateMagicWandStats();
-    void updateKnifeStats();
-    void updateSpellBookStats();
 public:
     Weapon(int type);
     const char* getName() const;

@@ -43,16 +43,40 @@ void Weapon::levelUp() {
 void Weapon::updateWeaponStats() {
     switch (weaponType) {
         case 0:
-            updateHammerStats();
+            weaponDamage = 25;
+            attackCooldown = 1.2f;
+            attackRange = 100.0f;
+            projectileSpeed = 300.0f;
+            projectileCount = 1;
+            explosionRadius = 50.0f;
+            doubleHit = false;
             break;
         case 1:
-            updateMagicWandStats();
+            weaponDamage = 8;
+            attackCooldown = 0.8f;
+            attackRange = 400.0f;
+            projectileSpeed = 300.0f;
+            projectileCount = 1;
+            explosionRadius = 50.0f;
+            doubleHit = false;
             break;
         case 2:
-            updateKnifeStats();
+            weaponDamage = 6;
+            attackCooldown = 0.3f;
+            attackRange = 100.0f;
+            projectileSpeed = 500.0f;
+            projectileCount = 1;
+            explosionRadius = 50.0f;
+            doubleHit = false;
             break;
         case 3:
-            updateSpellBookStats();
+            weaponDamage = 20;
+            attackCooldown = 1.0f;
+            attackRange = 100.0f;
+            projectileSpeed = 400.0f;
+            projectileCount = 1;
+            explosionRadius = 50.0f;
+            doubleHit = false;
             break;
         default:
             weaponDamage = 0;
@@ -64,145 +88,18 @@ void Weapon::updateWeaponStats() {
             doubleHit = false;
             break;
     }
-}
 
-void Weapon::updateHammerStats() {
-    weaponDamage = 25;
-    attackCooldown = 1.2f;
-    attackRange = 100.0f;
-    projectileSpeed = 300.0f;
-    projectileCount = 1;
-    explosionRadius = 50.0f;
-    doubleHit = false;
-
-    switch (weaponLevel) {
-        case 10:
+    for (int level = 1; level <= weaponLevel; level++) {
+        WeaponLevel data = getWeaponLevelData(weaponType, level);
+        weaponDamage += data.damageBonus;
+        attackRange += data.rangeBonus;
+        attackCooldown *= data.cooldownMultiplier;
+        projectileCount += data.projectileBonus;
+        projectileSpeed += data.speedBonus;
+        explosionRadius += data.explosionRadiusBonus;
+        if (data.doubleHit) {
             doubleHit = true;
-        case 9:
-            attackCooldown *= 0.8f;
-        case 8:
-            attackRange += 40.0f;
-        case 7:
-            weaponDamage += 15;
-        case 6:
-            attackCooldown *= 0.85f;
-        case 5:
-            attackRange += 30.0f;
-        case 4:
-            weaponDamage += 10;
-        case 3:
-            attackCooldown *= 0.9f;
-        case 2:
-            attackRange += 20.0f;
-        case 1:
-            weaponDamage += 5;
-        default:
-            break;
-    }
-}
-
-void Weapon::updateMagicWandStats() {
-    weaponDamage = 8;
-    attackCooldown = 0.8f;
-    attackRange = 400.0f;
-    projectileSpeed = 300.0f;
-    projectileCount = 1;
-    explosionRadius = 50.0f;
-    doubleHit = false;
-
-    switch (weaponLevel) {
-        case 10:
-            projectileCount += 1;
-        case 9:
-            projectileSpeed += 70.0f;
-        case 8:
-            attackCooldown *= 0.8f;
-        case 7:
-            weaponDamage += 8;
-        case 6:
-            projectileCount += 1;
-        case 5:
-            projectileSpeed += 50.0f;
-        case 4:
-            weaponDamage += 5;
-        case 3:
-            projectileCount += 1;
-        case 2:
-            attackCooldown *= 0.9f;
-        case 1:
-            weaponDamage += 3;
-        default:
-            break;
-    }
-}
-
-void Weapon::updateKnifeStats() {
-    weaponDamage = 6;
-    attackCooldown = 0.3f;
-    attackRange = 100.0f;
-    projectileSpeed = 500.0f;
-    projectileCount = 1;
-    explosionRadius = 50.0f;
-    doubleHit = false;
-
-    switch (weaponLevel) {
-        case 10:
-            projectileCount += 2;
-        case 9:
-            projectileSpeed += 100.0f;
-        case 8:
-            attackCooldown *= 0.8f;
-        case 7:
-            weaponDamage += 8;
-        case 6:
-            projectileCount += 2;
-        case 5:
-            projectileSpeed += 80.0f;
-        case 4:
-            weaponDamage += 5;
-        case 3:
-            projectileCount += 2;
-        case 2:
-            attackCooldown *= 0.9f;
-        case 1:
-            weaponDamage += 2;
-        default:
-            break;
-    }
-}
-
-void Weapon::updateSpellBookStats() {
-    weaponDamage = 20;
-    attackCooldown = 1.0f;
-    attackRange = 100.0f;
-    projectileSpeed = 400.0f;
-    projectileCount = 1;
-    explosionRadius = 50.0f;
-    doubleHit = false;
-
-    switch (weaponLevel) {
-        case 10:
-            projectileCount += 1;
-        case 9:
-            projectileSpeed += 60.0f;
-        case 8:
-            attackCooldown *= 0.8f;
-        case 7:
-            weaponDamage += 15;
-        case 6:
-            projectileCount += 1;
-        case 5:
-            explosionRadius += 30.0f;
-        case 4:
-            weaponDamage += 10;
-        case 3:
-            attackCooldown *= 0.9f;
-        case 2:
-            explosionRadius += 20.0f;
-        case 1:
-            weaponDamage += 5;
-        default:
-            break;
+        }
     }
 }
 
