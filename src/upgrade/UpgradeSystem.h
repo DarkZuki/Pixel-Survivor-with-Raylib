@@ -3,8 +3,10 @@
 #include "../weapon/weapon.h"
 #include <vector>
 
+// Giới hạn 3 nâng cấp xuất hiện khi lên cấp
 const int MAX_UPGRADE_OPTIONS = 3;
 
+// Struct kiểm tra các trường hợp nâng cấp
 struct UpgradeOption {
     int weaponType = -1;
     int upgradeLevel = 1;
@@ -12,6 +14,7 @@ struct UpgradeOption {
     Weapon* weaponPtr = nullptr;
 };
 
+// Class menu nâng cấp kiểm tra điều kiện
 class UpgradeSystem {
 private:
     bool active = false;

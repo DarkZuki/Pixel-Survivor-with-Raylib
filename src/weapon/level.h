@@ -2,7 +2,9 @@
 #define WEAPON_LEVEL_H
 
 #include <string>
+#include "weapon.h"
 
+// Struct chỉ số bonus khi lên cấp và effect đặc biệt
 struct WeaponLevel {
     int level;
     std::string name;
@@ -16,16 +18,7 @@ struct WeaponLevel {
     bool doubleHit;
 };
 
-struct WeaponStats {
-    int damage;
-    float cooldown;
-    float range;
-    float speed;
-    int count;
-    float explosionRadius;
-    bool doubleHit;
-};
-
+// Các hàm getter
 const char* getWeaponLevelWeaponName(int weaponType);
 WeaponLevel getWeaponLevelData(int weaponType, int level);
 WeaponStats getWeaponStats(int weaponType, int weaponLevel);

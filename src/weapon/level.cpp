@@ -1,5 +1,6 @@
 #include "level.h"
 
+// Hàm set chỉ số cơ bản ban đầu ko thể thay đổi
 const WeaponStats BASE_STATS[] = {
     {25, 1.2f, 100.0f, 300.0f, 1, 50.0f, false},
     {8, 0.8f, 400.0f, 300.0f, 1, 50.0f, false},
@@ -7,6 +8,7 @@ const WeaponStats BASE_STATS[] = {
     {20, 1.0f, 100.0f, 400.0f, 1, 50.0f, false}
 };
 
+// Hàm chả về tên vũ khí để hiển thị
 const char* getWeaponLevelWeaponName(int weaponType) {
     switch (weaponType) {
         case 0: return "Hammer";
@@ -17,6 +19,7 @@ const char* getWeaponLevelWeaponName(int weaponType) {
     }
 }
 
+// Hàm lấy chỉ số bonus và hiển thị theo từng loại và level của vũ khí
 WeaponLevel getWeaponLevelData(int weaponType, int level) {
     WeaponLevel data;
     data.level = level;
@@ -255,6 +258,7 @@ WeaponLevel getWeaponLevelData(int weaponType, int level) {
     return data;
 }
 
+// Hàm lấy chỉ số sau khi đã tính thêm bonus
 WeaponStats getWeaponStats(int weaponType, int weaponLevel) {
     WeaponStats stats = {0, 1.0f, 100.0f, 300.0f, 1, 50.0f, false};
     if (weaponType >= 0 && weaponType < 4) stats = BASE_STATS[weaponType];

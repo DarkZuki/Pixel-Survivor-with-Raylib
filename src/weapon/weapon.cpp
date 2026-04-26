@@ -1,4 +1,5 @@
 #include "weapon.h"
+#include "level.h"
 #include "raylib.h"
 #include "raymath.h"
 
@@ -22,58 +23,58 @@ void Weapon::setLevel(int newLevel) {
     updateWeaponStats();
 }
 
+// Hàm cập nhật chỉ số khi lên cấp
 void Weapon::updateWeaponStats() {
-    WeaponStats stats = getWeaponStats(weaponType, weaponLevel);
-
-    weaponDamage = stats.damage;
-    attackCooldown = stats.cooldown;
-    attackRange = stats.range;
-    projectileSpeed = stats.speed;
-    projectileCount = stats.count;
-    explosionRadius = stats.explosionRadius;
-    doubleHit = stats.doubleHit;
+    stats = getWeaponStats(weaponType, weaponLevel);
 }
 
+// Hàm kiểm tra cooldown và cho phép tấn công
 void Weapon::update(Player& player, const std::vector<Enemy*>& enemies,
                     std::vector<WeaponProjectile>& projectiles, Vector2 targetPosition, bool isAttacking) {
     if (weaponLevel <= 0) return;
 
     currentCooldownTimer += GetFrameTime();
-    if (isAttacking && currentCooldownTimer >= attackCooldown) {
+    if (isAttacking && currentCooldownTimer >= stats.cooldown) {
         currentCooldownTimer = 0.0f;
         attack(player, enemies, projectiles, targetPosition);
     }
 }
 
+// Hàm thực hiện tấn công 
 void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
                     std::vector<WeaponProjectile>& projectiles, Vector2 targetPosition) {
     if (weaponLevel <= 0) return;
 
     Vector2 playerPos = {player.getX(), player.getY()};
-    int totalDamage = weaponDamage + player.getDamage();
+    int totalDamage = stats.damage + player.getDamage();
 
     switch (weaponType) {
+        
+        // Búa - Hammer
         case 0:
             for (Enemy* enemy : enemies) {
                 if (!enemy) continue;
-                if (Vector2Distance(playerPos, {enemy->getX(), enemy->getY()}) <= attackRange) {
+                if (Vector2Distance(playerPos, {enemy->getX(), enemy->getY()}) <= stats.range) {
                     enemy->takeDamage(totalDamage);
-                    if (doubleHit) enemy->takeDamage(totalDamage);
+                    if (stats.doubleHit) enemy->takeDamage(totalDamage);
                 }
             }
-            projectiles.push_back({playerPos, {0, 0}, 0.2f, attackRange, 0, ORANGE, 1, 0});
+            projectiles.push_back({playerPos, {0, 0}, 0.2f, stats.range, 0, ORANGE, 1, 0});
             break;
-
+        
+        // Gậy phép - Magic Wand
         case 1: {
             int shotsFired = 0;
             for (Enemy* enemy : enemies) {
                 if (!enemy) continue;
-                if (shotsFired >= projectileCount) break;
-                if (Vector2Distance(playerPos, {enemy->getX(), enemy->getY()}) <= attackRange) {
+                if (shotsFired >= stats.count) break;
+                if (Vector2Distance(playerPos, {enemy->getX(), enemy->getY()}) <= stats.range) {
+                    
+                    // Thuật toán kiểm tra vị trí enemies trong bán kính cho phép auto bắn
                     Vector2 dir = {enemy->getX() - playerPos.x, enemy->getY() - playerPos.y};
                     if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
                     else dir = Vector2Normalize(dir);
-                    projectiles.push_back({playerPos, {dir.x * projectileSpeed, dir.y * projectileSpeed},
+                    projectiles.push_back({playerPos, {dir.x * stats.speed, dir.y * stats.speed},
                                            2.0f, 6.0f, (float)totalDamage, PURPLE, 0, 0});
                     shotsFired++;
                 }
@@ -81,42 +82,50 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
             break;
         }
 
+        // Dao ném - Knife
         case 2: {
             Vector2 dir = {targetPosition.x - playerPos.x, targetPosition.y - playerPos.y};
             if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
             else dir = Vector2Normalize(dir);
-            for (int i = 0; i < projectileCount; i++) {
-                float angleOffset = (float)(i - projectileCount / 2) * 8.0f;
-                if (projectileCount % 2 == 0) angleOffset += 4.0f;
+            for (int i = 0; i < stats.count; i++) {
+                
+                // Thuật toán căn chỉnh góc độ khi số lượng dao tăng
+                float angleOffset = (float)(i - stats.count / 2) * 8.0f;
+                if (stats.count % 2 == 0) angleOffset += 4.0f;
                 Vector2 v = Vector2Rotate(dir, angleOffset * DEG2RAD);
-                projectiles.push_back({playerPos, {v.x * projectileSpeed, v.y * projectileSpeed},
+                projectiles.push_back({playerPos, {v.x * stats.speed, v.y * stats.speed},
                                        1.0f, 4.0f, (float)totalDamage, SKYBLUE, 0, 0});
             }
             break;
         }
 
+        // Sách phép - Spell Book
         case 3: {
             Vector2 dir = {targetPosition.x - playerPos.x, targetPosition.y - playerPos.y};
             if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
             else dir = Vector2Normalize(dir);
-            for (int i = 0; i < projectileCount; i++) {
-                float angleOffset = (float)(i - projectileCount / 2) * 10.0f;
-                if (projectileCount % 2 == 0) angleOffset += 5.0f;
+            for (int i = 0; i < stats.count; i++) {
+
+                // Thuật toán căn chỉnh góc độ khi số lượng đạn tăng
+                float angleOffset = (float)(i - stats.count / 2) * 10.0f;
+                if (stats.count % 2 == 0) angleOffset += 5.0f;
                 Vector2 v = Vector2Rotate(dir, angleOffset * DEG2RAD);
-                projectiles.push_back({playerPos, {v.x * projectileSpeed, v.y * projectileSpeed},
-                                       2.0f, 8.0f, (float)totalDamage, PURPLE, 2, explosionRadius});
+                projectiles.push_back({playerPos, {v.x * stats.speed, v.y * stats.speed},
+                                       2.0f, 8.0f, (float)totalDamage, PURPLE, 2, stats.explosionRadius});
             }
             break;
         }
     }
 }
 
+// Hàm xử lý va chạm
 void updateProjectiles(std::vector<WeaponProjectile>& projectiles, std::vector<Enemy*>& enemies, float dt) {
     std::vector<WeaponProjectile> effects;
 
     for (int i = (int)projectiles.size() - 1; i >= 0; i--) {
         WeaponProjectile& p = projectiles[i];
 
+        // Tính vị trí khi cộng với khoảng cách bằng công thức vật lý
         p.position.x += p.velocity.x * dt;
         p.position.y += p.velocity.y * dt;
         p.lifeTime -= dt;
@@ -127,6 +136,7 @@ void updateProjectiles(std::vector<WeaponProjectile>& projectiles, std::vector<E
                 if (CheckCollisionCircles(p.position, p.radius, {enemy->getX(), enemy->getY()}, 10)) {
                     enemy->takeDamage((int)p.damage);
 
+                    // Trường hợp đạn từ sách phép nổ
                     if (p.type == 2) {
                         for (Enemy* splashEnemy : enemies) {
                             if (!splashEnemy) continue;
@@ -143,6 +153,7 @@ void updateProjectiles(std::vector<WeaponProjectile>& projectiles, std::vector<E
             }
         }
 
+        // Thời gian cho phép tồn tại hết sẽ mất --> tránh gây lag
         if (p.lifeTime <= 0) {
             projectiles.erase(projectiles.begin() + i);
         }
@@ -151,6 +162,7 @@ void updateProjectiles(std::vector<WeaponProjectile>& projectiles, std::vector<E
     for (WeaponProjectile effect : effects) projectiles.push_back(effect);
 }
 
+// Hàm vẽ các vật thể bay sử dụng raylib
 void drawProjectiles(const std::vector<WeaponProjectile>& projectiles) {
     for (const WeaponProjectile& p : projectiles) {
         if (p.type == 1) {
