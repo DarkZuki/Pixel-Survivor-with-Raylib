@@ -105,7 +105,7 @@ int main() {
                             allWeapons[selected.weaponType]->setLevel(1);
                         }
                     } else if (selected.weaponPtr != nullptr) {
-                        selected.weaponPtr->levelUp();
+                        selected.weaponPtr->setLevel(selected.weaponPtr->getLevel() + 1);
                     }
                 }
             }

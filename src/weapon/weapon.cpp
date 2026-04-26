@@ -2,29 +2,6 @@
 #include "raylib.h"
 #include "raymath.h"
 
-namespace {
-
-Vector2 getDirection(Vector2 from, Vector2 to) {
-    Vector2 dir = {to.x - from.x, to.y - from.y};
-    if (Vector2LengthSqr(dir) < 0.0001f) return {1.0f, 0.0f};
-    return Vector2Normalize(dir);
-}
-
-void addSpreadProjectiles(std::vector<WeaponProjectile>& projectiles, Vector2 start, Vector2 target,
-                          int count, float speed, float lifeTime, float radius, float damage,
-                          Color color, int type, float angleValue, float angleStep) {
-    Vector2 dir = getDirection(start, target);
-    for (int i = 0; i < count; i++) {
-        float angleOffset = (float)(i - count / 2) * angleStep;
-        if (count % 2 == 0) angleOffset += angleStep / 2.0f;
-        Vector2 shotDir = Vector2Rotate(dir, angleOffset * DEG2RAD);
-        projectiles.push_back({start, {shotDir.x * speed, shotDir.y * speed}, lifeTime,
-                               radius, damage, color, type, angleValue});
-    }
-}
-
-} // namespace
-
 Weapon::Weapon(int type) {
     weaponType = type;
     weaponLevel = 1;
@@ -41,17 +18,8 @@ int Weapon::getLevel() const {
 }
 
 void Weapon::setLevel(int newLevel) {
-    if (newLevel < 0) newLevel = 0;
-    if (newLevel > 10) newLevel = 10;
-    weaponLevel = newLevel;
+    weaponLevel = newLevel < 0 ? 0 : (newLevel > 10 ? 10 : newLevel);
     updateWeaponStats();
-}
-
-void Weapon::levelUp() {
-    if (weaponLevel < 10) {
-        weaponLevel++;
-        updateWeaponStats();
-    }
 }
 
 void Weapon::updateWeaponStats() {
@@ -102,7 +70,9 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
                 if (!enemy) continue;
                 if (shotsFired >= projectileCount) break;
                 if (Vector2Distance(playerPos, {enemy->getX(), enemy->getY()}) <= attackRange) {
-                    Vector2 dir = getDirection(playerPos, {enemy->getX(), enemy->getY()});
+                    Vector2 dir = {enemy->getX() - playerPos.x, enemy->getY() - playerPos.y};
+                    if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
+                    else dir = Vector2Normalize(dir);
                     projectiles.push_back({playerPos, {dir.x * projectileSpeed, dir.y * projectileSpeed},
                                            2.0f, 6.0f, (float)totalDamage, PURPLE, 0, 0});
                     shotsFired++;
@@ -111,23 +81,42 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
             break;
         }
 
-        case 2:
-            addSpreadProjectiles(projectiles, playerPos, targetPosition, projectileCount, projectileSpeed,
-                                 1.0f, 4.0f, (float)totalDamage, SKYBLUE, 0, 0, 8.0f);
+        case 2: {
+            Vector2 dir = {targetPosition.x - playerPos.x, targetPosition.y - playerPos.y};
+            if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
+            else dir = Vector2Normalize(dir);
+            for (int i = 0; i < projectileCount; i++) {
+                float angleOffset = (float)(i - projectileCount / 2) * 8.0f;
+                if (projectileCount % 2 == 0) angleOffset += 4.0f;
+                Vector2 v = Vector2Rotate(dir, angleOffset * DEG2RAD);
+                projectiles.push_back({playerPos, {v.x * projectileSpeed, v.y * projectileSpeed},
+                                       1.0f, 4.0f, (float)totalDamage, SKYBLUE, 0, 0});
+            }
             break;
+        }
 
-        case 3:
-            addSpreadProjectiles(projectiles, playerPos, targetPosition, projectileCount, projectileSpeed,
-                                 2.0f, 8.0f, (float)totalDamage, PURPLE, 2, explosionRadius, 10.0f);
+        case 3: {
+            Vector2 dir = {targetPosition.x - playerPos.x, targetPosition.y - playerPos.y};
+            if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
+            else dir = Vector2Normalize(dir);
+            for (int i = 0; i < projectileCount; i++) {
+                float angleOffset = (float)(i - projectileCount / 2) * 10.0f;
+                if (projectileCount % 2 == 0) angleOffset += 5.0f;
+                Vector2 v = Vector2Rotate(dir, angleOffset * DEG2RAD);
+                projectiles.push_back({playerPos, {v.x * projectileSpeed, v.y * projectileSpeed},
+                                       2.0f, 8.0f, (float)totalDamage, PURPLE, 2, explosionRadius});
+            }
             break;
+        }
     }
 }
 
 void updateProjectiles(std::vector<WeaponProjectile>& projectiles, std::vector<Enemy*>& enemies, float dt) {
-    std::vector<WeaponProjectile> extraEffects;
+    std::vector<WeaponProjectile> effects;
 
     for (int i = (int)projectiles.size() - 1; i >= 0; i--) {
         WeaponProjectile& p = projectiles[i];
+
         p.position.x += p.velocity.x * dt;
         p.position.y += p.velocity.y * dt;
         p.lifeTime -= dt;
@@ -145,7 +134,7 @@ void updateProjectiles(std::vector<WeaponProjectile>& projectiles, std::vector<E
                                 splashEnemy->takeDamage((int)(p.damage / 2));
                             }
                         }
-                        extraEffects.push_back({p.position, {0, 0}, 0.3f, 0, 0, ORANGE, 2, p.angle});
+                        effects.push_back({p.position, {0, 0}, 0.3f, 0, 0, ORANGE, 2, p.angle});
                     }
 
                     p.lifeTime = 0;
@@ -159,9 +148,7 @@ void updateProjectiles(std::vector<WeaponProjectile>& projectiles, std::vector<E
         }
     }
 
-    for (const WeaponProjectile& effect : extraEffects) {
-        projectiles.push_back(effect);
-    }
+    for (WeaponProjectile effect : effects) projectiles.push_back(effect);
 }
 
 void drawProjectiles(const std::vector<WeaponProjectile>& projectiles) {

@@ -1,15 +1,11 @@
 #include "level.h"
 
-namespace {
-
 const WeaponStats BASE_STATS[] = {
     {25, 1.2f, 100.0f, 300.0f, 1, 50.0f, false},
     {8, 0.8f, 400.0f, 300.0f, 1, 50.0f, false},
     {6, 0.3f, 100.0f, 500.0f, 1, 50.0f, false},
     {20, 1.0f, 100.0f, 400.0f, 1, 50.0f, false}
 };
-
-}
 
 const char* getWeaponLevelWeaponName(int weaponType) {
     switch (weaponType) {

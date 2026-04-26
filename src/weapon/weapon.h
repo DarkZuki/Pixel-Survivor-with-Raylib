@@ -38,7 +38,6 @@ public:
     const char* getName() const;
     int getLevel() const;
     void setLevel(int newLevel);
-    void levelUp();
     void attack(Player& player, const std::vector<Enemy*>& enemies,
                 std::vector<WeaponProjectile>& projectiles, Vector2 targetPosition);
     void update(Player& player, const std::vector<Enemy*>& enemies,
