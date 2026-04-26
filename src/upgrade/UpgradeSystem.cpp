@@ -1,7 +1,7 @@
 #include "UpgradeSystem.h"
 #include "../weapon/level.h"
 
-void UpgradeSystem::showUpgradeMenu(std::vector<Weapon*>& weapons) {
+void UpgradeSystem::showUpgradeMenu(std::vector<Weapon*>& weapons, int weaponCount, int maxWeapons) {
     active = true;
     paused = true;
     delay = 1.5;
@@ -14,11 +14,13 @@ void UpgradeSystem::showUpgradeMenu(std::vector<Weapon*>& weapons) {
     for (int i = 0; i < 3; i++) options[i] = {};
 
     int k = 0;
-    for (int i = 0; i < 4 && k < 3; i++) {
-        if (i >= (int)weapons.size() || weapons[i] == nullptr || weapons[i]->getLevel() <= 0) {
-            options[k].weaponType = i;
-            options[k].isNewWeapon = true;
-            k++;
+    if (weaponCount < maxWeapons) {
+        for (int i = 0; i < 4 && k < 3; i++) {
+            if (i >= (int)weapons.size() || weapons[i] == nullptr || weapons[i]->getLevel() <= 0) {
+                options[k].weaponType = i;
+                options[k].isNewWeapon = true;
+                k++;
+            }
         }
     }
 

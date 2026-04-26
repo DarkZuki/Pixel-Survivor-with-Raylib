@@ -23,7 +23,7 @@ private:
     Rectangle skipBox = {325, 500, 150, 50};
 
 public:
-    void showUpgradeMenu(std::vector<Weapon*>& weapons);
+    void showUpgradeMenu(std::vector<Weapon*>& weapons, int weaponCount = 0, int maxWeapons = 2);
     void update();
     void draw();
     bool isMenuActive() const { return active; }

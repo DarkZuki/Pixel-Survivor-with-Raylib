@@ -60,7 +60,7 @@ int main() {
     Weapon magicWand(1);  // Magic Wand
     Weapon knife(2);      // Knife
     Weapon spellBook(3);  // Spell Book
-    Weapon* currentWeapon = &hammer; // Start with hammer
+    Weapon* currentWeapon = nullptr;
     
     // Create upgrade system
     UpgradeSystem upgradeSystem;
@@ -73,18 +73,17 @@ int main() {
     knife.setLevel(0);
     spellBook.setLevel(0);
     
-    // Give player a starting weapon
-    hammer.setLevel(1);   // Start with Hammer unlocked at level 1
-    
     // Vector to track all weapons for the upgrade system
     vector<Weapon*> allWeapons;
     allWeapons.push_back(&hammer);
     allWeapons.push_back(&magicWand);
     allWeapons.push_back(&knife);
     allWeapons.push_back(&spellBook);
+
+    vector<Weapon*> weaponInventory;
     
     // Track if we need to show upgrade menu
-    bool shouldShowUpgrade = false;
+    bool shouldShowUpgrade = true;
     int previousLevel = 1;
 
     while (!WindowShouldClose()) {
@@ -101,8 +100,11 @@ int main() {
                     // Apply the upgrade
                     if (selected.isNewWeapon) {
                         // Find the weapon and unlock it
-                        if (selected.weaponType < (int)allWeapons.size()) {
-                            allWeapons[selected.weaponType]->setLevel(1);
+                        if (selected.weaponType < (int)allWeapons.size() && (int)weaponInventory.size() < 2) {
+                            Weapon* newWeapon = allWeapons[selected.weaponType];
+                            newWeapon->setLevel(1);
+                            weaponInventory.push_back(newWeapon);
+                            if (currentWeapon == nullptr) currentWeapon = newWeapon;
                         }
                     } else if (selected.weaponPtr != nullptr) {
                         selected.weaponPtr->setLevel(selected.weaponPtr->getLevel() + 1);
@@ -139,7 +141,7 @@ int main() {
         
         // Show upgrade menu if needed
         if (shouldShowUpgrade) {
-            upgradeSystem.showUpgradeMenu(allWeapons);
+            upgradeSystem.showUpgradeMenu(allWeapons, (int)weaponInventory.size(), 2);
             shouldShowUpgrade = false;
             continue;  // Skip this frame's game update
         }
@@ -168,17 +170,17 @@ int main() {
         gameTimer += dt; // Update game timer
 
         // Switch weapons with number keys
-        if (IsKeyPressed(KEY_ONE)) currentWeapon = &hammer;
-        if (IsKeyPressed(KEY_TWO)) currentWeapon = &magicWand;
-        if (IsKeyPressed(KEY_THREE)) currentWeapon = &knife;
-        if (IsKeyPressed(KEY_FOUR)) currentWeapon = &spellBook;
+        if (IsKeyPressed(KEY_ONE) && weaponInventory.size() > 0) currentWeapon = weaponInventory[0];
+        if (IsKeyPressed(KEY_TWO) && weaponInventory.size() > 1) currentWeapon = weaponInventory[1];
 
         Vector2 mouseScreenPos = GetMousePosition();
         Vector2 attackTarget = GetScreenToWorld2D(mouseScreenPos, player.getCamera());
         bool isAttacking = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
 
         // Update weapons
-        currentWeapon->update(player, enemies, weaponProjectiles, attackTarget, isAttacking);
+        if (currentWeapon != nullptr) {
+            currentWeapon->update(player, enemies, weaponProjectiles, attackTarget, isAttacking);
+        }
         updateProjectiles(weaponProjectiles, enemies, dt);
         
         // Update
@@ -385,7 +387,7 @@ int main() {
         DrawText(TextFormat("LV: %d", player.getLevel()), 10, 55, 20, YELLOW);
         
         // Draw current weapon name
-        DrawText(TextFormat("Weapon: %s (1-4 to switch)", currentWeapon->getName()), 10, 105, 15, GREEN);
+        DrawText(currentWeapon ? TextFormat("Weapon: %s (1-2 to switch)", currentWeapon->getName()) : "Weapon: None", 10, 105, 15, GREEN);
         
         // Draw EXP progress bar
         int expBarWidth = 800;
@@ -405,6 +407,24 @@ int main() {
         int secs = (int)(gameTimer) % 60;
         // Display survival time in MM:SS format
         DrawText(TextFormat("Time: %02d:%02d", mins, secs), 330, 20, 25, WHITE);
+
+        Rectangle slot1 = {180, 500, 70, 70};
+        Rectangle slot2 = {270, 500, 70, 70};
+        DrawRectangleRec(slot1, DARKGRAY);
+        DrawRectangleRec(slot2, DARKGRAY);
+        DrawRectangleLinesEx(slot1, currentWeapon == (weaponInventory.size() > 0 ? weaponInventory[0] : nullptr) ? 3 : 2, WHITE);
+        DrawRectangleLinesEx(slot2, currentWeapon == (weaponInventory.size() > 1 ? weaponInventory[1] : nullptr) ? 3 : 2, WHITE);
+        DrawText("1", slot1.x + 6, slot1.y + 4, 16, LIGHTGRAY);
+        DrawText("2", slot2.x + 6, slot2.y + 4, 16, LIGHTGRAY);
+
+        if (weaponInventory.size() > 0) {
+            DrawText(TextFormat("Lv %d", weaponInventory[0]->getLevel()), slot1.x + 18, slot1.y - 18, 16, YELLOW);
+            DrawText(weaponInventory[0]->getName(), slot1.x + 8, slot1.y + 28, 12, WHITE);
+        }
+        if (weaponInventory.size() > 1) {
+            DrawText(TextFormat("Lv %d", weaponInventory[1]->getLevel()), slot2.x + 18, slot2.y - 18, 16, YELLOW);
+            DrawText(weaponInventory[1]->getName(), slot2.x + 8, slot2.y + 28, 12, WHITE);
+        }
         EndDrawing();
     }
 
