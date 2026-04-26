@@ -168,34 +168,14 @@ int main() {
         for (size_t i = 0; i < enemies.size(); i++) {
             for (size_t j = 0; j < bullets.size(); j++) {
                 if (!bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), 
-                            enemies[i]->getX(), enemies[i]->getY()) < 15) {
-                    enemies[i]->takeDamage(20);
-                    bullets[j]->setX(-1000);
+                    enemies[i]->getX(), enemies[i]->getY()) < 15) {
                     
-                    if (enemies[i]->getHp() <= 0) {
-                        // Award score based on enemy type
-                        int scoreType = enemies[i]->getEnemyType();
-                        if (scoreType == 0) player.addScore(10); // NORMAL
-                        else if (scoreType == 1) player.addScore(15); // FAST
-                        else if (scoreType == 2) player.addScore(25); // TANK
-                        else if (scoreType == 3) player.addScore(20); // RANGED
-                        // Spawn an item at the enemy's position with EXP value based on enemy type
-                        int val = 10; // NORMAL EXP
-                        int type = enemies[i]->getEnemyType();
-                        if (type == 1) val = 15; // FAST EXP
-                        if (type == 2) val = 25;// TANK EXP 
-                        if (type == 3) val = 20;  // RANGED EXP
-                        Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), val, 0);
-                        items.push_back(item);
-                        entities.push_back(item);
-                        removeEntity(entities, bullets[j]);
-                        removeEnemy(entities, enemies, i);
-                        i--;
-                        break;
-                    }
+                    enemies[i]->takeDamage(20); // Chỉ trừ máu
+                    bullets[j]->setX(-1000);    // Đánh dấu xóa đạn
                 }
             }
         }
+       
         
         
         player.update();
@@ -211,14 +191,6 @@ int main() {
         }
 
 
-        // KIỂM TRA QUÁI CHẾT (Nếu HP <= 0 thì xóa)
-        for (int i = (int)enemies.size() - 1; i >= 0; i--) {
-            if (enemies[i]->getHp() <= 0) {
-                player.addExp(10);
-                player.addScore(10);
-                removeEnemy(entities, enemies, i);
-            }
-        }
         // Player-enemy collisions
         for (auto enemy : enemies) {
             if (distance(player.getX(), player.getY(), 
@@ -239,27 +211,57 @@ int main() {
         
         // Item collection
         for (size_t k =0; k < items.size(); k++){
-            float dist = distance(player.getX(), player.getY(), items[k]->getX(), items[k]->getY());
-            if (dist < 20){
+           float dist = distance(player.getX(), player.getY(), items[k]->getX(), items[k]->getY());
+            if (dist < 20) {
                 if (items[k]->getID() == 1) { // HP item
-                    player.setHp(player.getHp() + 10); // Heal player by 20 HP
+                    player.setHp(player.getHp() + 10);
                 } else { // EXP item
                     int pointsEarned = items[k]->getExpValue();
-                    player.addExp(pointsEarned);
+                
+                    // LƯU LẠI CẤP ĐỘ TRƯỚC KHI CỘNG EXP
+                    int oldLevel = player.getLevel();
+                    
+                    player.addExp(pointsEarned); // Hàm này sẽ tự gọi levelUp() bên trong Player.cpp
+
+                    // NẾU CẤP ĐỘ THAY ĐỔI -> NÂNG CẤP SKILL
+                    if (player.getLevel() > oldLevel) {
+                        TraceLog(LOG_INFO, "PLAYER LEVEL UP! Upgrading all skills...");
+                        for (auto s : skills) {
+                            s->levelUp(); // GỌI HÀM NÀY THÌ SKILL MỚI LÊN CẤP ĐƯỢC
+                        }
+                }
                 }
                 removeEntity(entities, items[k]);
                 delete items[k];
                 items.erase(items.begin() + k);
                 k--;
-            }
-            else if (items[k]->isExpired()) {
-                removeEntity(entities, items[k]);
-                delete items[k];
-                items.erase(items.begin() + k);
-                k--;
-            }
+                }
+            
         }
     }
+    for (int i = (int)enemies.size() - 1; i >= 0; i--) {
+    if (enemies[i]->getHp() <= 0) {
+        // 1. Tính toán giá trị EXP dựa trên loại quái
+        int val = 10;
+        int type = enemies[i]->getEnemyType();
+        if (type == 1) val = 15; // FAST
+        if (type == 2) val = 25; // TANK
+        if (type == 3) val = 20; // RANGED
+
+        // 2. TẠO ITEM KINH NGHIỆM RƠI RA ĐẤT
+        // ID 0 là EXP, ID 1 là HP (theo file Item.cpp của mày)
+        Item* crystal = new Item(enemies[i]->getX(), enemies[i]->getY(), val, 0);
+        
+        items.push_back(crystal);
+        entities.push_back(crystal);
+
+        // 3. Cộng điểm Score (không phải EXP) cho oai
+        player.addScore(val);
+
+        // 4. XÓA QUÁI THỰC SỰ KHỎI GAME
+        removeEnemy(entities, enemies, i);
+    }
+}
         // Draw
         BeginDrawing();
         ClearBackground(BLACK);
