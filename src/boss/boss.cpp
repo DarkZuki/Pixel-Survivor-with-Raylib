@@ -26,6 +26,18 @@ void Boss::takeDamage(int damage) {
 
 void Boss::update() {
     Enemy::update(); // Vẫn đuổi theo Player
+    // 1. Ép tỉ lệ máu (Max là 5000)
+    hpPercent = (float)this->getHp() / 5000.0f;
+    if (hpPercent < 0) hpPercent = 0;
+    if (hpPercent > 1) hpPercent = 1;
+
+    // 2. Ép tỉ lệ giáp (Giả sử maxArmor của bác là 1000)
+    if (maxArmor > 0) {
+        armorPercent = currentArmor / maxArmor;
+    } else {
+        armorPercent = 0;
+    }
+    if (armorPercent < 0) armorPercent = 0;
     // tao phase 2 de boss noi dien
     if (this->getHp() < 2000) {
         this->setSpeed(2.8f); 
@@ -42,19 +54,34 @@ void Boss::update() {
 }
 
 void Boss::draw() {
-    // Vẽ Boss to ra (Scale 3.0)
-    DrawTextureEx(*texture, {x - 120, y - 120}, 0.0f, 1.0f, WHITE);
-
-    // tinh toan so lieu de ve mau giap
-    float hpPercent = (float)this->getHp() / 5000.f;
-    if (hpPercent < 0) hpPercent = 0;
-    float armorPercent = currentArmor / maxArmor;
-    if (armorPercent <0) armorPercent = 0;
-    // Vẽ thanh Máu (Đỏ)
-    DrawRectangle(x - 50, y - 100, 100, 10, DARKGRAY); // Nền thanh máu
-    DrawRectangle(x - 50, y - 100, (int)(100* hpPercent), 10, RED); // Mau hien tai
-    // Vẽ thanh Giáp (Xanh) 
-    if (currentArmor > 0){
-    DrawRectangle(x - 50, y - 88, (int)(100 * (100 * armorPercent)), 6, SKYBLUE);
+    if (texture !=nullptr){
+        // ep khung hinh voi hit box 70px
+        float targetSize = 140.0f;
+        // tạo cấu hình vùng ảnh
+        Rectangle source = { 0.0f, 0.0f, (float)texture->width, (float)texture->height };
+        // tạo cấu hình vùng va chạm
+        Rectangle dest = { x, y, targetSize, targetSize };
+        // thiết lập điểm gốc (tâm hình chữ nhật) để tính góc xoay từ tâm
+        Vector2 origin = { targetSize / 2.0f, targetSize / 2.0f };
+        // Vẽ
+        DrawTexturePro(*texture, source, dest, origin, rotation, WHITE);
     }
+    // EP THANH MAU VA THANH GIAP
+    float barWidth = 120.0f; 
+    float barX= x - barWidth / 2.0f;  // Căn giữa theo tâm x
+    float barY_HP = y - 85.0f;        // Nằm trên đỉnh Boss một chút
+    float barY_Armor = y - 73.0f;     // Nằm ngay dưới thanh máu
+    DrawText(TextFormat("HP: %d", hp), x - 15, y - 20, 8, WHITE);
+    // Vẽ thanh Máu (Đỏ)
+    DrawRectangle(barX, barY_HP, barWidth, 12, BLACK); // Viền/Nền
+    DrawRectangle(barX, barY_HP, (int)(barWidth * hpPercent), 12, RED);
+    DrawRectangleLines(barX, barY_HP, barWidth, 12, LIGHTGRAY); // Viền cho sắc nét
+    // Vẽ thanh Giáp (Xanh SkyBlue)
+    if (currentArmor > 0) {
+        DrawRectangle(barX, barY_Armor, (int)(barWidth * armorPercent), 8, SKYBLUE);
+        DrawRectangleLines(barX, barY_Armor, barWidth, 8, BLUE);
+    }
+
+    // Vẽ Text tên Boss cho uy tín
+    DrawText("THANOS", barX, barY_HP - 15, 10, GOLD);
 }

@@ -10,6 +10,8 @@ private:
     float damageReduction; 
     float armorRegenTimer;
     const float ARMOR_REGEN_COOLDOWN = 30.0f;
+    float hpPercent;
+    float armorPercent;
 
 public:
     // Constructor gọi từ lớp cha Enemy

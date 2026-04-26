@@ -35,6 +35,8 @@ int main() {
     enemySprites[1] = LoadTexture("Graphics/Venom-removebg-preview.png");
     enemySprites[2] = LoadTexture("Graphics/Supreme-Leader-Ultron-removebg-preview.png");
     enemySprites[3] = LoadTexture("Graphics/Loki-removebg-preview.png");
+    enemySprites[4] = LoadTexture("Graphics/Thanos Perler Bead Pattern.png");
+
     SetTargetFPS(60);
  
     Player player;
@@ -150,7 +152,7 @@ int main() {
 
         // Triệu hồi BOSS
         if (waveSystem.shouldSpawnBoss()) {
-            Boss* b = new Boss(&player, 2, &enemySprites[2]); 
+            Boss* b = new Boss(&player, 0, &enemySprites[4]); 
             b->setPosition(spawnX, spawnY);
         // áp chỉ số cho boss
             float multiplier = waveSystem.getStatMultiplier();
