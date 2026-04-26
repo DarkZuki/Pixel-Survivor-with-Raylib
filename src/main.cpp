@@ -39,7 +39,9 @@ int main() {
     float spawnTimer = 0.0f; // Track time for spawning enemies
     float gameTimer = 0.0f; // Track total survival time
     float hpSpawnTimer = 0.0f; // Track time for spawning HP items
-
+    //nút dừng game
+    bool isPaused = false; // Trạng thái game
+    Rectangle pauseButton = { 740, 10, 50, 50 }; // Vị trí nút Pause (Góc trên bên phải)
     entities.push_back(&player);
     // --- KHỞI TẠO DANH SÁCH SKILLS ---
     vector<Skill*> skills;
@@ -56,8 +58,19 @@ int main() {
         entities.push_back(s);
     }
     
-
     while (!WindowShouldClose()) { 
+
+//  Kiểm tra bấm nút Pause hoặc bấm phím ESC
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if (CheckCollisionPointRec(GetMousePosition(), pauseButton)) {
+                isPaused = !isPaused; // Đảo trạng thái
+            }
+        }
+        if (IsKeyPressed(KEY_ESCAPE)) isPaused = !isPaused;
+
+        if (!isPaused) {
+                
+
         hpSpawnTimer += GetFrameTime();
         if (hpSpawnTimer >= 10.0f) { // Spawn HP item every 10 seconds
             float randomX = GetRandomValue(50, 750);
@@ -81,7 +94,7 @@ int main() {
             continue;
         }
         gameTimer += GetFrameTime(); // Update game timer
-
+            
         // Update
         for (auto e : entities) e->update();
         // RANGED ENEMY LOGIC (Type 3)
@@ -246,7 +259,7 @@ int main() {
                 k--;
             }
         }
-
+    }
         // Draw
         BeginDrawing();
         ClearBackground(BLACK);
@@ -275,6 +288,40 @@ int main() {
         // Display survival time in MM:SS format
         DrawText(TextFormat("Time: %02d:%02d", mins, secs), 330, 20, 25, WHITE);
       
+        DrawRectangleRec(pauseButton, DARKGRAY);
+        DrawText("||", pauseButton.x + 18, pauseButton.y + 10, 30, WHITE);
+
+        // NẾU ĐANG PAUSE THÌ VẼ BẢNG MENU
+        if (isPaused) {
+            // Vẽ lớp nền mờ đè lên game
+            DrawRectangle(0, 0, 800, 600, Fade(BLACK, 0.6f));
+
+            // Vẽ cái bảng Menu ở giữa
+            DrawRectangle(250, 150, 300, 300, RAYWHITE);
+            DrawText("GAME PAUSED", 310, 180, 30, BLACK);
+
+            // Nút RESUME
+            Rectangle resumeBtn = { 300, 250, 200, 50 };
+            DrawRectangleRec(resumeBtn, LIGHTGRAY);
+            DrawText("RESUME", 355, 265, 20, BLACK);
+
+            // Nút EXIT
+            Rectangle exitBtn = { 300, 330, 200, 50 };
+            DrawRectangleRec(exitBtn, RED);
+            DrawText("EXIT", 375, 345, 20, WHITE);
+
+            // Check click vào các nút trong Menu
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                Vector2 mousePos = GetMousePosition();
+                if (CheckCollisionPointRec(mousePos, resumeBtn)) {
+                    isPaused = false; // Chạy tiếp
+                }
+                if (CheckCollisionPointRec(mousePos, exitBtn)) {
+                    break; // Thoát vòng lặp main -> Out game
+                }
+            }
+        }
+
         EndDrawing();
     }
 
