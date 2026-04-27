@@ -1,159 +1,177 @@
 #include "weapon.h"
+#include "level.h"
 #include "raylib.h"
 #include "raymath.h"
-#include <algorithm>
 
-// Weapon constructor
 Weapon::Weapon(int type) {
     weaponType = type;
+    weaponLevel = 1;
     currentCooldownTimer = 0.0f;
-    switch (weaponType) {
-        case 0: // Hammer
-            weaponDamage = 25;
-            attackCooldown = 1.2f;
-            break;
-        case 1: // Magic Wand
-            weaponDamage = 8;
-            attackCooldown = 0.8f;
-            break;
-        case 2: // Knife
-            weaponDamage = 6;
-            attackCooldown = 0.3f;
-            break;
-        case 3: // Spell Book
-            weaponDamage = 20;
-            attackCooldown = 1.0f;
-            break;
-        default:
-            weaponDamage = 0;
-            attackCooldown = 1.0f;
-            break;
-    }
+    updateWeaponStats();
 }
 
-// Get weapon name
 const char* Weapon::getName() const {
-    switch (weaponType) {
-        case 0: return "Hammer";
-        case 1: return "Magic Wand";
-        case 2: return "Knife";
-        case 3: return "Spell Book";
-        default: return "Unknown";
-    }
+    return getWeaponLevelWeaponName(weaponType);
 }
 
-// Update weapon - handles cooldown and attacks
+int Weapon::getLevel() const {
+    return weaponLevel;
+}
+
+void Weapon::setLevel(int newLevel) {
+    weaponLevel = newLevel < 0 ? 0 : (newLevel > 10 ? 10 : newLevel);
+    updateWeaponStats();
+}
+
+// Hàm cập nhật chỉ số khi lên cấp
+void Weapon::updateWeaponStats() {
+    stats = getWeaponStats(weaponType, weaponLevel);
+}
+
+// Hàm kiểm tra cooldown và cho phép tấn công
 void Weapon::update(Player& player, const std::vector<Enemy*>& enemies,
                     std::vector<WeaponProjectile>& projectiles, Vector2 targetPosition, bool isAttacking) {
+    if (weaponLevel <= 0) return;
+
     currentCooldownTimer += GetFrameTime();
-    if (isAttacking && currentCooldownTimer >= attackCooldown) {
-        currentCooldownTimer = 0;
+    if (isAttacking && currentCooldownTimer >= stats.cooldown) {
+        currentCooldownTimer = 0.0f;
         attack(player, enemies, projectiles, targetPosition);
     }
 }
 
-// Internal attack method - handles different weapon behaviors
+// Hàm thực hiện tấn công 
 void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
                     std::vector<WeaponProjectile>& projectiles, Vector2 targetPosition) {
-    Vector2 pp = {player.getX(), player.getY()};
-    
+    if (weaponLevel <= 0) return;
+
+    Vector2 playerPos = {player.getX(), player.getY()};
+    int totalDamage = stats.damage + player.getDamage();
+
     switch (weaponType) {
-        case 0: { // Hammer - simple circle AoE
-            for (Enemy* e : enemies) {
-                if (Vector2Distance(pp, {e->getX(), e->getY()}) <= 100)
-                    e->takeDamage(weaponDamage + player.getDamage());
+        
+        // Búa - Hammer
+        case 0:
+            for (Enemy* enemy : enemies) {
+                if (!enemy) continue;
+                if (Vector2Distance(playerPos, {enemy->getX(), enemy->getY()}) <= stats.range) {
+                    enemy->takeDamage(totalDamage);
+                    if (stats.doubleHit) enemy->takeDamage(totalDamage);
+                }
             }
-            projectiles.push_back({pp, {0,0}, 0.2f, 100, 0, ORANGE, 1, 0});
+            projectiles.push_back({playerPos, {0, 0}, 0.2f, stats.range, 0, ORANGE, 1, 0});
+            break;
+        
+        // Gậy phép - Magic Wand
+        case 1: {
+            int shotsFired = 0;
+            for (Enemy* enemy : enemies) {
+                if (!enemy) continue;
+                if (shotsFired >= stats.count) break;
+                if (Vector2Distance(playerPos, {enemy->getX(), enemy->getY()}) <= stats.range) {
+                    
+                    // Thuật toán kiểm tra vị trí enemies trong bán kính cho phép auto bắn
+                    Vector2 dir = {enemy->getX() - playerPos.x, enemy->getY() - playerPos.y};
+                    if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
+                    else dir = Vector2Normalize(dir);
+                    projectiles.push_back({playerPos, {dir.x * stats.speed, dir.y * stats.speed},
+                                           2.0f, 6.0f, (float)totalDamage, PURPLE, 0, 0});
+                    shotsFired++;
+                }
+            }
             break;
         }
-        
-        case 1: { // Magic Wand - auto-target nearest enemy
-            Enemy* nearest = nullptr;
-            float minDist = 400;
-            for (Enemy* e : enemies) {
-                float d = Vector2Distance(pp, {e->getX(), e->getY()});
-                if (d < minDist) { minDist = d; nearest = e; }
-            }
-            if (nearest) {
-                Vector2 dir = Vector2Normalize({nearest->getX() - pp.x, nearest->getY() - pp.y});
-                projectiles.push_back({pp, {dir.x*300, dir.y*300}, 2.0f, 6.0f, (float)(weaponDamage + player.getDamage()), PURPLE, 0, 0});
+
+        // Dao ném - Knife
+        case 2: {
+            Vector2 dir = {targetPosition.x - playerPos.x, targetPosition.y - playerPos.y};
+            if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
+            else dir = Vector2Normalize(dir);
+            for (int i = 0; i < stats.count; i++) {
+                
+                // Thuật toán căn chỉnh góc độ khi số lượng dao tăng
+                float angleOffset = (float)(i - stats.count / 2) * 8.0f;
+                if (stats.count % 2 == 0) angleOffset += 4.0f;
+                Vector2 v = Vector2Rotate(dir, angleOffset * DEG2RAD);
+                projectiles.push_back({playerPos, {v.x * stats.speed, v.y * stats.speed},
+                                       1.0f, 4.0f, (float)totalDamage, SKYBLUE, 0, 0});
             }
             break;
         }
-        
-        case 2: { // Knife - shoots straight toward target
-            Vector2 dir = Vector2Normalize({targetPosition.x - pp.x, targetPosition.y - pp.y});
-            projectiles.push_back({pp, {dir.x*500, dir.y*500}, 1.0f, 4.0f, (float)(weaponDamage + player.getDamage()), SKYBLUE, 0, 0});
-            break;
-        }
-        
-        case 3: { // Spell Book - explosive projectile
-            Vector2 dir = Vector2Normalize({targetPosition.x - pp.x, targetPosition.y - pp.y});
-            projectiles.push_back({pp, {dir.x*400, dir.y*400}, 2.0f, 8.0f, (float)(weaponDamage + player.getDamage()), PURPLE, 2, 50.0f});
+
+        // Sách phép - Spell Book
+        case 3: {
+            Vector2 dir = {targetPosition.x - playerPos.x, targetPosition.y - playerPos.y};
+            if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
+            else dir = Vector2Normalize(dir);
+            for (int i = 0; i < stats.count; i++) {
+
+                // Thuật toán căn chỉnh góc độ khi số lượng đạn tăng
+                float angleOffset = (float)(i - stats.count / 2) * 10.0f;
+                if (stats.count % 2 == 0) angleOffset += 5.0f;
+                Vector2 v = Vector2Rotate(dir, angleOffset * DEG2RAD);
+                projectiles.push_back({playerPos, {v.x * stats.speed, v.y * stats.speed},
+                                       2.0f, 8.0f, (float)totalDamage, PURPLE, 2, stats.explosionRadius});
+            }
             break;
         }
     }
 }
 
-// Update all active projectiles
+// Hàm xử lý va chạm
 void updateProjectiles(std::vector<WeaponProjectile>& projectiles, std::vector<Enemy*>& enemies, float dt) {
-    // Collect explosion visuals to add after processing (avoids vector reallocation issues)
-    std::vector<WeaponProjectile> explosionsToAdd;
-    
+    std::vector<WeaponProjectile> effects;
+
     for (int i = (int)projectiles.size() - 1; i >= 0; i--) {
         WeaponProjectile& p = projectiles[i];
+
+        // Tính vị trí khi cộng với khoảng cách bằng công thức vật lý
         p.position.x += p.velocity.x * dt;
         p.position.y += p.velocity.y * dt;
         p.lifeTime -= dt;
-        
+
         if (p.damage > 0) {
-            for (int j = (int)enemies.size() - 1; j >= 0; j--) {
-                if (CheckCollisionCircles(p.position, p.radius, {enemies[j]->getX(), enemies[j]->getY()}, 10)) {
-                    enemies[j]->takeDamage(p.damage);
-                    
-                    if (p.type == 2) { // Explosion - defer visual creation
-                        Vector2 expPos = p.position;
-                        float expRad = p.angle;
-                        for (Enemy* e : enemies) {
-                            if (e && Vector2Distance(expPos, {e->getX(), e->getY()}) <= expRad) {
-                                e->takeDamage(p.damage / 2);
+            for (Enemy* enemy : enemies) {
+                if (!enemy) continue;
+                if (CheckCollisionCircles(p.position, p.radius, {enemy->getX(), enemy->getY()}, 10)) {
+                    enemy->takeDamage((int)p.damage);
+
+                    // Trường hợp đạn từ sách phép nổ
+                    if (p.type == 2) {
+                        for (Enemy* splashEnemy : enemies) {
+                            if (!splashEnemy) continue;
+                            if (Vector2Distance(p.position, {splashEnemy->getX(), splashEnemy->getY()}) <= p.angle) {
+                                splashEnemy->takeDamage((int)(p.damage / 2));
                             }
                         }
-                        explosionsToAdd.push_back({expPos, {0,0}, 0.3f, 0, 0, ORANGE, 2, expRad});
+                        effects.push_back({p.position, {0, 0}, 0.3f, 0, 0, ORANGE, 2, p.angle});
                     }
-                    
+
                     p.lifeTime = 0;
                     break;
                 }
             }
         }
-        
+
+        // Thời gian cho phép tồn tại hết sẽ mất --> tránh gây lag
         if (p.lifeTime <= 0) {
             projectiles.erase(projectiles.begin() + i);
         }
     }
-    
-    // Add explosion visuals after all projectiles have been processed
-    for (size_t i = 0; i < explosionsToAdd.size(); i++) {
-        projectiles.push_back(explosionsToAdd[i]);
-    }
+
+    for (WeaponProjectile effect : effects) projectiles.push_back(effect);
 }
 
-// Draw all projectiles
+// Hàm vẽ các vật thể bay sử dụng raylib
 void drawProjectiles(const std::vector<WeaponProjectile>& projectiles) {
-    for (const auto& projectile : projectiles) {
-        // Hammer smash visual (type 1) - full 360 degree circle AoE
-        if (projectile.type == 1) {
-            DrawCircleV(projectile.position, projectile.radius, Fade(ORANGE, projectile.lifeTime * 5));
-            DrawCircleLinesV(projectile.position, projectile.radius, Fade(YELLOW, projectile.lifeTime * 5));
-        }
-        // Explosion visual (type 2, damage=0 means it's the visual effect)
-        else if (projectile.type == 2 && projectile.damage == 0) {
-            DrawCircleV(projectile.position, projectile.angle , Fade(ORANGE, projectile.lifeTime * 3));
-        }
-        // Normal projectiles
-        else {
-            DrawCircleV(projectile.position, projectile.radius, projectile.color);
+    for (const WeaponProjectile& p : projectiles) {
+        if (p.type == 1) {
+            DrawCircleV(p.position, p.radius, Fade(ORANGE, p.lifeTime * 5));
+            DrawCircleLinesV(p.position, p.radius, Fade(YELLOW, p.lifeTime * 5));
+        } else if (p.type == 2 && p.damage == 0) {
+            DrawCircleV(p.position, p.angle, Fade(ORANGE, p.lifeTime * 3));
+        } else {
+            DrawCircleV(p.position, p.radius, p.color);
         }
     }
 }

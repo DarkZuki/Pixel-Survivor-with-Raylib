@@ -35,12 +35,12 @@ void Item::draw() {
     // 2. Draw both circle and outline only if it's in a "visible" blink state
     if (shouldDraw) {
         if (ID == 1){
-            DrawRectangle(x-5, y-5, 10, 10, color); // Draw HP item as a square
-            DrawRectangleLines(x-5, y-5, 10, 10, WHITE); // Outline for HP item
+            DrawRectangle(x-9, y-9, 18, 18, color); // Draw HP item as a square
+            DrawRectangleLines(x-9, y-9, 18, 18, WHITE); // Outline for HP item
             return; // Skip drawing the circle for HP items
         } else if (ID == 0){
-        DrawCircle(x, y, 4, color);        // Solid core (Reduced size to 4)
-        DrawCircleLines(x, y, 4, WHITE);   // Consistent outline
+        DrawCircle(x, y, 7, color);        // Solid core
+        DrawCircleLines(x, y, 7, WHITE);   // Consistent outline
     }
     }
 }

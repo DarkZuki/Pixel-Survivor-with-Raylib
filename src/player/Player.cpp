@@ -1,9 +1,10 @@
 #include "Player.h"
-#include "raymath.h"
+#include "raylib.h"
+#include <cmath>
 
 Player::Player() {
-    x = 400;
-    y = 300;
+    x = 960;
+    y = 520;
     hp = 100;
     maxHp = 100;
     level = 1;
@@ -14,7 +15,7 @@ Player::Player() {
     
     // Initialize camera to follow the player
     camera.target = (Vector2){ x, y };
-    camera.offset = (Vector2){ 400, 300 }; // Center of 800x600 screen
+    camera.offset = (Vector2){ 960, 520 }; // Center of 1920x1040 screen
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
 }
@@ -65,12 +66,16 @@ void Player::update() {
     
     // Update facing direction
     if (moveDir.x != 0 || moveDir.y != 0) {
-        facingDir = Vector2Normalize(moveDir);
+        float len = sqrtf(moveDir.x * moveDir.x + moveDir.y * moveDir.y);
+        if (len > 0) {
+            facingDir.x = moveDir.x / len;
+            facingDir.y = moveDir.y / len;
+        }
     }
 }
 
 void Player::draw() {
-    DrawCircle(x, y, 10, BLUE);
-    DrawText(TextFormat("HP: %d/%d", hp, maxHp), x - 25, y - 30, 10, WHITE);
-    DrawText(TextFormat("LV: %d", level), x - 15, y - 42, 10, YELLOW);
+    DrawCircle(x, y, 18, BLUE);
+    DrawText(TextFormat("HP: %d/%d", hp, maxHp), x - 45, y - 54, 18, WHITE);
+    DrawText(TextFormat("LV: %d", level), x - 27, y - 76, 18, YELLOW);
 }
