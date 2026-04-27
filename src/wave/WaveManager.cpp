@@ -9,9 +9,10 @@ WaveManager::WaveManager() {
 }
 void WaveManager::update(float deltaTime) {
     internalTimer += deltaTime;
+    // cứ 30 giây mới chuyển wave
     currentMilestoneIdx = (int) (internalTimer / 30.0f);
     if (currentMilestoneIdx > 19) {
-        currentMilestoneIdx = 19; // Cap at wave 20
+        currentMilestoneIdx = 19; // giới hạn tại wave 20
     }
 }
 float WaveManager::getSpawnInterval() const {
@@ -19,10 +20,10 @@ float WaveManager::getSpawnInterval() const {
     int waveNum = currentMilestoneIdx + 1;
     float interval;
     if (waveNum == 4 || waveNum == 8 || waveNum == 12 || waveNum == 16) {
-         interval = baseInterval / 3.0f; // Halve spawn interval at waves 4, 8, 12, 16 for a spike in difficulty
+         interval = baseInterval / 3.0f; // tăng tỉ lệ spawn vào những wave đặc biệt
     }else {
     float waveSpeedUp = 1.0f + (currentMilestoneIdx * 0.5f); 
-    interval = baseInterval / waveSpeedUp;
+    interval = baseInterval / waveSpeedUp; // tỉ lệ spawn mỗi wave
     } 
     interval = interval * spawnRateMult;
     // thêm điều kiện để giảm tỉ lệ spawn tại wave 20
@@ -37,16 +38,15 @@ float WaveManager::getSpawnInterval() const {
 float WaveManager::getStatMultiplier() const {
     int waveNum = currentMilestoneIdx + 1;
     if (waveNum == 4 || waveNum == 8 || waveNum == 12 || waveNum == 16) {
-        return (1.0f + (currentMilestoneIdx * 0.5f)) * 2.0f;
+        return (1.0f + (currentMilestoneIdx * 0.5f)) * 2.0f; // tăng chỉ số vào wave đặc biệt
     }
-    return 1.0f + (currentMilestoneIdx * 0.5f);
+    return 1.0f + (currentMilestoneIdx * 0.5f); // tăng chỉ số theo từng wave
 
 }
 int WaveManager::getRandomEnemyType() {
     int stage = currentMilestoneIdx / 4; // Determine stage based on wave number
     int r =GetRandomValue(0, 99);
-    // Mở khóa quái dựa trên số WAVE hiện tại (Thay vì thời gian giây)
-    // Điều này giúp logic đồng bộ với hiển thị UI
+    // Mở khóa quái dựa trên số WAVE hiện tại
     switch (stage){
         case 0: // Waves 1-4
             return 1; // NORMAL only
@@ -81,7 +81,7 @@ void WaveManager::setInternalTimer (float time) {
     }
 }
 void WaveManager::skipToWave(int waveNumber) {
-    bossSpawned = false; // Rêset lại khi nhảy wave
+    bossSpawned = false; // Reset lại khi nhảy wave
     if (waveNumber > 20) {
         waveNumber = 20; // Cap at max wave
     }
@@ -121,11 +121,26 @@ float WaveManager::getDifficultySpeedMultiplier() {
     return 1.0f;
 }
 bool WaveManager::shouldSpawnBoss() {
+    // điều kiện boss xuất hiện
     if (currentMilestoneIdx == 19 && !bossSpawned) {
         return true;
     }
     return false;
 }
 void WaveManager::markBossSpawned() {
+    // đánh dấu boss đã xuất hiện
     bossSpawned = true;
+}
+// CHỈNH DAME CỦA QUÁI THEO WAVE
+int WaveManager::getCurrentWaveDamage() {
+    // 1. Tính sát thương gốc: Cứ 2 wave tăng 1 đơn vị
+    // Wave 1-2: 1 | Wave 3-4: 2 | Wave 5-6: 3...
+    int baseDamage = 1 + (currentMilestoneIdx / 2); 
+
+    // 2. Nhân hệ số theo độ khó (Difficulty) bác đã thiết lập
+    if (difficultyID == 0) return baseDamage;               // EASY
+    if (difficultyID == 1) return (int)(baseDamage * 2);    // HARD (x2)
+    if (difficultyID == 2) return (int)(baseDamage * 4);    // HELL (x4)
+
+    return baseDamage;
 }

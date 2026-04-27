@@ -21,6 +21,8 @@ protected:
     float stoppingDistance;
     // tạo đồng hồ nạp đạn riêng biệt cho từng con quái
     float fireTimer = 0.0f;
+    // cài damage mặc định 
+    int damage = 1;
 public:
     //Constructor
     Enemy(Player* p, int type, Texture2D* tex);
@@ -31,6 +33,7 @@ public:
     // Getters
     int getHp() const { return hp; }
     float getSpeed() const { return speed; }
+    int getDamage() const { return damage; }
     int getEnemyType() const { return enemyType; }
     Player* getPlayer() const { return player; }
     int getExpReward() {
@@ -53,6 +56,7 @@ public:
     // Setters
     void setHp(int newHp) { hp = newHp; }
     void setSpeed(float newSpeed) { speed = newSpeed; }
+    void setDamage(int d) { damage = d; }
     virtual void takeDamage(int damage) { hp -= damage; }
     virtual ~Enemy() {}
     

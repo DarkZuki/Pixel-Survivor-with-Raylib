@@ -23,6 +23,8 @@ public:
     int getCurrentWaveNumber() const { return currentMilestoneIdx + 1; }
     float getInternalTimer () const { return internalTimer; }
     bool isFinished() const {  return false; }
+    // CHỈNH DAME QUÁI THEO WAVE
+    int getCurrentWaveDamage();
     // setters
     // Set internal timer and update wave accordingly (useful for testing or implementing features like "skip wave")
     void setInternalTimer (float time);

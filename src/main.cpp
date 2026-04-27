@@ -30,7 +30,8 @@ void removeEnemy(vector<Entity*>& entities, vector<Enemy*>& enemies, int idx) {
 
 int main() {
     InitWindow(800, 600, "PIXEL SURVIVOR");
-    Texture2D enemySprites[4];
+    // gắn đồ họa
+    Texture2D enemySprites[5];
     enemySprites[0] = LoadTexture("Graphics/Ultron-Perler-Bead-Pattern-removebg-preview.png");
     enemySprites[1] = LoadTexture("Graphics/Venom-removebg-preview.png");
     enemySprites[2] = LoadTexture("Graphics/Supreme-Leader-Ultron-removebg-preview.png");
@@ -105,6 +106,7 @@ int main() {
             EndDrawing();
             continue;
         }
+        // TẠO MÀN HÌNH KHI HOÀN THÀNH MÀN CHƠI
         if (waveSystem.getCurrentWaveNumber() == 20 && waveSystem.hasBossBeenSpawned() && enemies.empty()) {
             BeginDrawing ();
             ClearBackground(BLACK); 
@@ -129,10 +131,11 @@ int main() {
         
         // Update
         for (auto e : entities) e->update();
-        // RANGED ENEMY LOGIC (Type 3)
+        // RANGED ENEMY LOGIC 
         for (auto e : enemies) {
-            if (e->canShoot()) { 
-                        Bullet* eb = new Bullet(e->getX(), e->getY(), player.getX(), player.getY());
+            if (e->getEnemyType() == 3 && e->canShoot()) { 
+                int bulletDmg = e->getDamage();
+                        Bullet* eb = new Bullet(e->getX(), e->getY(), player.getX(), player.getY(),bulletDmg);
                         eb->setIsEnemyBullet(true);
                         bullets.push_back(eb);
                         entities.push_back(eb);
@@ -140,7 +143,7 @@ int main() {
             }
 
         // Spawn enemies
-        // Spawn logic: Every second, spawn an enemy at a random angle around the player, at a fixed radius
+        // Spawn logic: spawn an enemy at a random angle around the player, at a fixed radius
         const float PIXEL_SPAWN_RADIUS = 400.0f;
         if (!waveSystem.isFinished())
         spawnTimer += GetFrameTime();
@@ -154,6 +157,7 @@ int main() {
         if (waveSystem.shouldSpawnBoss()) {
             Boss* b = new Boss(&player, 0, &enemySprites[4]); 
             b->setPosition(spawnX, spawnY);
+            b->setDamage(waveSystem.getCurrentWaveDamage() * 3);
         // áp chỉ số cho boss
             float multiplier = waveSystem.getStatMultiplier();
             float diffHPMult = waveSystem.getDifficultyHPMultiplier();
@@ -175,12 +179,13 @@ int main() {
 
         // Set Position and Apply Multipliers
             e->setPosition(spawnX, spawnY);
-
+            
             float multiplier = waveSystem.getStatMultiplier();
             float diffHPMult = waveSystem.getDifficultyHPMultiplier();
             float diffSpMult = waveSystem.getDifficultySpeedMultiplier();
             e->setHp((int)(e->getHp() * multiplier * diffHPMult));// Multiply both here
             e->setSpeed(e->getSpeed() * diffSpMult);  //Add speed multiplier
+            e->setDamage(waveSystem.getCurrentWaveDamage()); 
         // Add to Management Lists
             enemies.push_back(e);
             entities.push_back(e);
@@ -192,7 +197,7 @@ int main() {
 
         // Shoot bullets
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            Bullet* b = new Bullet(player.getX(), player.getY(), attackTarget.x, attackTarget.y);
+            Bullet* b = new Bullet(player.getX(), player.getY(), attackTarget.x, attackTarget.y,20);
             bullets.push_back(b);
             entities.push_back(b);
         }
@@ -244,14 +249,14 @@ int main() {
             if (waveSystem.getCurrentWaveNumber() == 20) playerHitbox = 50.0f; // Boss chạm nhẹ là mất máu
             if (distance(player.getX(), player.getY(), 
                         enemy->getX(), enemy->getY()) < 20) {
-                player.takeDamage(1);
+                player.takeDamage(enemy->getDamage());
             }
         }
 
         // Enemy bullet-player collisions
         for (size_t j = 0; j < bullets.size(); j++) {
             if (bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), player.getX(), player.getY()) < 15) {
-                player.takeDamage(1);
+                player.takeDamage(bullets[j]->getDamage());
                 removeEntity(entities, bullets[j]);
                 bullets.erase(bullets.begin() + j);
                 j--;
@@ -323,7 +328,7 @@ int main() {
         EndDrawing();
     }
     // giải phóng bộ nhớ 
-    for (int i=0; i<4 ; i++){
+    for (int i=0; i<5 ; i++){
         UnloadTexture(enemySprites[i]);
     }
     CloseWindow();

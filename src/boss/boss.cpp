@@ -1,7 +1,7 @@
 #include "Boss.h"
 
 Boss::Boss(Player* p, int type, Texture2D* tex) : Enemy(p, type, tex) {
-    this->setHp(5000);           
+    this->setHp(5);           
     this->maxArmor = 1000.0f;       
     this->currentArmor = maxArmor;
     this->damageReduction = 0.4f;   

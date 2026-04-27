@@ -1,7 +1,7 @@
 #include "Bullet.h"
 #include <cmath>
 
-Bullet::Bullet(float sx, float sy, float tx, float ty) {
+Bullet::Bullet(float sx, float sy, float tx, float ty, int dmg) {
     x = sx;
     y = sy;
     isEnemyBullet = false;
@@ -15,6 +15,7 @@ Bullet::Bullet(float sx, float sy, float tx, float ty) {
     } else {
         vx = vy = 0;
     }
+    this->damage = dmg;
 }
 
 void Bullet::update() {
