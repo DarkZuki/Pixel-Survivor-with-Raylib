@@ -10,7 +10,7 @@ Skill::Skill(Player* p, SkillType skillType) : player(p), type(skillType) {
     y = p->getY();
     level = 1;
     
-    // Load Textures (Giữ nguyên assets của mày)
+    // Load Textures 
     shurikenTexture = LoadTexture("Graphics/shuriken.png");
     thunderTexture = LoadTexture("Graphics/thunderdungdung.png");
     shieldTexture = LoadTexture("Graphics/khiendoitruongmy.png");
@@ -57,7 +57,6 @@ void Skill::updateSkillStats() {
     is_dual_laser = false;
     is_hammer_riu = false;
     num_shields = 1;
-    thunder_chain_count = 0;
     thunder_cooldown = 5.0f;
 
     switch (type) {
@@ -216,7 +215,7 @@ void Skill::update() {
         if (s.pos.x < 0 || s.pos.x > 800) { s.speed.x *= -1; s.bounces++; }
         if (s.pos.y < 0 || s.pos.y > 600) { s.speed.y *= -1; s.bounces++; }
         
-        //  Nảy đủ 3 lần thì cút
+        //  Nảy đủ 3 lần thì xóa
         if (s.bounces > 3) s.active = false; 
     }
 }
@@ -269,7 +268,7 @@ void Skill::triggerThunder(std::vector<Enemy*>& enemies) {
     thunder_timer += GetFrameTime();
     if (thunder_timer < cooldown) return;
 
-    thunderPositions.clear(); // List này phải khai báo trong Skill.h (std::vector<Vector2>)
+    thunderPositions.clear(); 
     
     // Copy danh sách quái để chọn không bị trùng
     std::vector<Enemy*> tempEnemies = enemies;
@@ -294,7 +293,7 @@ void Skill::triggerThunder(std::vector<Enemy*>& enemies) {
 }
 
 void Skill::triggerShieldCollision(std::vector<Enemy*>& enemies) {
-    // 1. Tạo khiên mới dựa trên timer (Nhét vào đây để có 'enemies')
+    // 1. Tạo khiên mới dựa trên timer
     if (type == SkillType::SHIELD && shield_timer >= cooldown) {
         shield_timer = 0.0f;
         for (int i = 0; i < num_shields; i++) {
@@ -357,7 +356,7 @@ void Skill::triggerHammerCollision(std::vector<Enemy*>& enemies) {
                 // Gây sát thương 1 lần duy nhất
                 e->takeDamage((int)this->damage);
                 
-                // Đánh dấu: "Tao vừa chém thằng này rồi, frame sau đéo chém nữa"
+                // Đánh dấu: "Tao vừa chém thằng này rồi, frame sau không chém nữa"
                 h.lastHitEnemy = (void*)e; 
 
             }
@@ -377,12 +376,8 @@ void Skill::triggerShurikenCollision(std::vector<Enemy*>& enemies) {
             // Check va chạm
             if (CheckCollisionCircles(p, 20, {e->getX(), e->getY()}, 20)) {
                 
-                // Mày có thể dùng một cái cooldown nhỏ ở đây 
-                // Hoặc đơn giản là gây dame mỗi khi nó chạm (vì phi tiêu xoay nên nó sẽ lướt qua quái nhanh)
                 e->takeDamage((int)damage);
-                
-                // Nếu muốn nó đéo bị lỗi như cái khiên (dame liên tục), 
-                // thì mày phải thêm một cái hit_timer cho từng con quái như tao nói lúc nãy.
+ 
             }
         }
     }
