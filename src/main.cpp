@@ -36,6 +36,9 @@ int main() {
     float enemyFireTimer=0; // Track cooldown for ranged enemies
     float spawnTimer = 0.0f; // Track time for spawning enemies
     float hpSpawnTimer = 0.0f; // Track time for spawning HP items
+    //nút dừng game
+    bool isPaused = false; // Trạng thái game
+    Rectangle pauseButton = { 740, 10, 50, 50 }; // Vị trí nút Pause (Góc trên bên phải)
     float gameTimer = 0.0f; // Track total survival time
     int currentDiffID  = -1 ;// trạng thái chờ chọn màn chơi
     bool gameStarted = false; // điều kiện để bắt đầu cho quái ra chơi
@@ -48,9 +51,35 @@ int main() {
     camera.zoom = 1.0f;
 
     entities.push_back(&player);
-    Skill* skill = new Skill(&player);
-    entities.push_back(skill);
+    // --- KHỞI TẠO DANH SÁCH SKILLS ---
+    vector<Skill*> skills;
 
+    // Mày muốn chơi skill nào thì push_back cái đó vào
+    skills.push_back(new Skill(&player, SkillType::LASER_BEAM));
+    skills.push_back(new Skill(&player, SkillType::HAMMER));
+    skills.push_back(new Skill(&player, SkillType::SHIELD));
+    skills.push_back(new Skill(&player, SkillType::SHURIKEN));
+    skills.push_back(new Skill(&player, SkillType::THUNDER_STRIKE));
+
+    // Thêm các skill vào danh sách entities để nó tự gọi hàm draw()
+    for (auto s : skills) {
+        entities.push_back(s);
+    }
+    
+    while (!WindowShouldClose()) { 
+
+//  Kiểm tra bấm nút Pause hoặc bấm phím ESC
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if (CheckCollisionPointRec(GetMousePosition(), pauseButton)) {
+                isPaused = !isPaused; // Đảo trạng thái
+            }
+        }
+        if (IsKeyPressed(KEY_ESCAPE)) isPaused = !isPaused;
+
+        if (!isPaused) {
+                
+
+        hpSpawnTimer += GetFrameTime();
     // Create weapons
     Weapon hammer(0);     // Hammer
     Weapon magicWand(1);  // Magic Wand
@@ -199,6 +228,8 @@ int main() {
             if (IsKeyPressed(KEY_ESCAPE)) break;
             continue;
         }
+        gameTimer += GetFrameTime(); // Update game timer
+            
         waveSystem.update(dt);
         gameTimer += dt; // Update game timer
 
@@ -290,6 +321,26 @@ int main() {
             if (waveSystem.getCurrentWaveNumber() == 20) hitboxRadius = 70.0f; // Boss to thì hitbox to
             for (size_t j = 0; j < bullets.size(); j++) {
                 if (!bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), 
+                    enemies[i]->getX(), enemies[i]->getY()) < 15) {
+                    
+                    enemies[i]->takeDamage(20); // Chỉ trừ máu
+                    bullets[j]->setX(-1000);    // Đánh dấu xóa đạn
+                }
+            }
+        }
+       
+        
+        
+        player.update();
+        for (auto s : skills) {
+            s->update(); // Cập nhật vị trí, timer của từng skill
+            
+            // Gọi tất cả trigger, skill nào đúng Type của nó thì nó mới chạy
+            s->triggerLaser(enemies);
+            s->triggerThunder(enemies);
+            s->triggerShieldCollision(enemies);
+            s->triggerHammerCollision(enemies);
+            s->triggerShurikenCollision(enemies);
                             enemies[i]->getX(), enemies[i]->getY()) < hitboxRadius) {
                     enemies[i]->takeDamage(20);
                     bullets[j]->setX(-1000);
@@ -335,6 +386,7 @@ int main() {
             }
         }
 
+
         // Player-enemy collisions
         for (auto enemy : enemies) {
             if (distance(player.getX(), player.getY(), 
@@ -352,29 +404,45 @@ int main() {
                 j--;
             }
         }
-
+        
         // Item collection
         for (size_t k =0; k < items.size(); k++){
-            float dist = distance(player.getX(), player.getY(), items[k]->getX(), items[k]->getY());
-            if (dist < 20){
+           float dist = distance(player.getX(), player.getY(), items[k]->getX(), items[k]->getY());
+            if (dist < 20) {
                 if (items[k]->getID() == 1) { // HP item
-                    player.setHp(player.getHp() + 10); // Heal player by 20 HP
+                    player.setHp(player.getHp() + 10);
                 } else { // EXP item
                     int pointsEarned = items[k]->getExpValue();
-                    player.addExp(pointsEarned);
+                
+                    // LƯU LẠI CẤP ĐỘ TRƯỚC KHI CỘNG EXP
+                    int oldLevel = player.getLevel();
+                    
+                    player.addExp(pointsEarned); // Hàm này sẽ tự gọi levelUp() bên trong Player.cpp
+
+                    // NẾU CẤP ĐỘ THAY ĐỔI -> NÂNG CẤP SKILL
+                    if (player.getLevel() > oldLevel) {
+                        TraceLog(LOG_INFO, "PLAYER LEVEL UP! Upgrading all skills...");
+                        for (auto s : skills) {
+                            s->levelUp(); // GỌI HÀM NÀY THÌ SKILL MỚI LÊN CẤP ĐƯỢC
+                        }
+                }
                 }
                 removeEntity(entities, items[k]);
                 delete items[k];
                 items.erase(items.begin() + k);
                 k--;
-            }
-            else if (items[k]->isExpired()) {
-                removeEntity(entities, items[k]);
-                delete items[k];
-                items.erase(items.begin() + k);
-                k--;
-            }
+                }
+            
         }
+    }
+    for (int i = (int)enemies.size() - 1; i >= 0; i--) {
+    if (enemies[i]->getHp() <= 0) {
+        // 1. Tính toán giá trị EXP dựa trên loại quái
+        int val = 10;
+        int type = enemies[i]->getEnemyType();
+        if (type == 1) val = 15; // FAST
+        if (type == 2) val = 25; // TANK
+        if (type == 3) val = 20; // RANGED
 
         // Check for dead enemies from weapon bullets
         for (int i = (int)enemies.size() - 1; i >= 0; i--) {
@@ -401,11 +469,6 @@ int main() {
         // Draw
         BeginDrawing();
         ClearBackground(BLACK);
-        
-        // Begin camera mode to follow player
-        BeginMode2D(player.getCamera());
-        
-        // Draw all game entities with camera applied
         for (auto e : entities) e->draw();
         drawProjectiles(weaponProjectiles); // Draw weapon projectiles
         
@@ -432,6 +495,47 @@ int main() {
 
         DrawText(TextFormat("EXP: %d/%d", player.getExp(), player.getExpToNextLevel()), 792, 1004, 36, SKYBLUE);
         
+        DrawText(TextFormat("Score: %d", player.getScore()), 10, 80, 20, WHITE);
+        // Format time as MM:Ss
+        int mins = (int)(gameTimer / 60);
+        int secs = (int)(gameTimer) % 60;
+        // Display survival time in MM:SS format
+        DrawText(TextFormat("Time: %02d:%02d", mins, secs), 330, 20, 25, WHITE);
+      
+        DrawRectangleRec(pauseButton, DARKGRAY);
+        DrawText("||", pauseButton.x + 18, pauseButton.y + 10, 30, WHITE);
+
+        // NẾU ĐANG PAUSE THÌ VẼ BẢNG MENU
+        if (isPaused) {
+            // Vẽ lớp nền mờ đè lên game
+            DrawRectangle(0, 0, 800, 600, Fade(BLACK, 0.6f));
+
+            // Vẽ cái bảng Menu ở giữa
+            DrawRectangle(250, 150, 300, 300, RAYWHITE);
+            DrawText("GAME PAUSED", 310, 180, 30, BLACK);
+
+            // Nút RESUME
+            Rectangle resumeBtn = { 300, 250, 200, 50 };
+            DrawRectangleRec(resumeBtn, LIGHTGRAY);
+            DrawText("RESUME", 355, 265, 20, BLACK);
+
+            // Nút EXIT
+            Rectangle exitBtn = { 300, 330, 200, 50 };
+            DrawRectangleRec(exitBtn, RED);
+            DrawText("EXIT", 375, 345, 20, WHITE);
+
+            // Check click vào các nút trong Menu
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                Vector2 mousePos = GetMousePosition();
+                if (CheckCollisionPointRec(mousePos, resumeBtn)) {
+                    isPaused = false; // Chạy tiếp
+                }
+                if (CheckCollisionPointRec(mousePos, exitBtn)) {
+                    break; // Thoát vòng lặp main -> Out game
+                }
+            }
+        }
+
         DrawText(TextFormat("Score: %d", player.getScore()), 24, 144, 36, WHITE);
         // Format time as MM:SS
         int total = (int)waveSystem.getInternalTimer();
@@ -467,5 +571,6 @@ int main() {
     }
     CloseWindow();
     return 0;
+
 }
  
