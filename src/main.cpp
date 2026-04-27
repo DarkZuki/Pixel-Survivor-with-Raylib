@@ -9,6 +9,18 @@
 #include "skill/Skill.h"
 #include "bullet/Bullet.h"
 #include "Item/Item.h"
+#include "wave/WaveManager.h"
+#include "boss/Boss.h"
+using namespace std;
+
+float distance(float x1, float y1, float x2, float y2) {
+    float dx = x2 - x1, dy = y2 - y1;
+    return sqrt(dx*dx + dy*dy);
+}
+
+void removeEntity(vector<Entity*>& entities, Entity* entity) {
+    entities.erase(remove(entities.begin(), entities.end(), entity), entities.end());
+}
 #include "weapon/weapon.h"
 #include "upgrade/UpgradeSystem.h"
 
@@ -17,8 +29,17 @@ using namespace std;
 int main() {
     InitWindow(1920, 1040, "PIXEL SURVIVOR");
     SetTargetFPS(60);
-
+    // gắn đồ họa
+    Texture2D enemySprites[5];
+    enemySprites[0] = LoadTexture("Graphics/Ultron-Perler-Bead-Pattern-removebg-preview.png");
+    enemySprites[1] = LoadTexture("Graphics/Venom-removebg-preview.png");
+    enemySprites[2] = LoadTexture("Graphics/Supreme-Leader-Ultron-removebg-preview.png");
+    enemySprites[3] = LoadTexture("Graphics/Loki-removebg-preview.png");
+    enemySprites[4] = LoadTexture("Graphics/Thanos Perler Bead Pattern.png")
+    SetTargetFPS(60);
+ 
     Player player;
+    WaveManager waveSystem;
     vector<Entity*> entities;
     vector<Enemy*> enemies;
     vector<Bullet*> bullets;
@@ -26,8 +47,9 @@ int main() {
     vector<WeaponProjectile> weaponProjectiles; // Weapon projectile system
     float enemyFireTimer=0; // Track cooldown for ranged enemies
     float spawnTimer = 0.0f; // Track time for spawning enemies
-    float gameTimer = 0.0f; // Track total survival time
     float hpSpawnTimer = 0.0f; // Track time for spawning HP items
+    int currentDiffID  = -1 ;// trạng thái chờ chọn màn chơi
+    bool gameStarted = false; // điều kiện để bắt đầu cho quái ra chơi
     
     // Camera setup
     Camera2D camera = { 0 };
@@ -72,6 +94,27 @@ int main() {
     int previousLevel = 1;
 
     while (!WindowShouldClose()) {
+      if (!gameStarted){
+            // dùng phím chọn qua chế độ chơi nào
+            if (IsKeyPressed(KEY_ONE))   { currentDiffID = 0; gameStarted = true; waveSystem.skipToWave(20);}
+            if (IsKeyPressed(KEY_TWO))   { currentDiffID = 1; gameStarted = true; }
+            if (IsKeyPressed(KEY_THREE)) { currentDiffID = 2; gameStarted = true; }
+            if (gameStarted){
+                waveSystem.setDifficulty(currentDiffID); 
+            }
+            BeginDrawing();
+            ClearBackground(BLACK);
+            DrawText("Select Difficulty Level:", 280, 220, 20, GRAY);
+            DrawText("[1] EASY - Low Density / Weak Enemies", 240, 270, 20, GREEN);
+            DrawText("[2] HARD - Standard Operations", 240, 310, 20, ORANGE);
+            DrawText("[3] HELL - High Density / Elite Enemies", 240, 350, 20, RED);
+        
+            DrawText("Press key to deploy...", 300, 450, 15, DARKGRAY);
+            EndDrawing();
+            continue;
+
+        }
+        hpSpawnTimer += GetFrameTime();
         float dt = GetFrameTime();
         
         // Check if upgrade menu is active
@@ -143,6 +186,7 @@ int main() {
             BeginDrawing();
             ClearBackground(BLACK);
             // Format time as MM:SS
+            int total = (int)waveSystem.getInternalTimer();
             int mins = (int)(gameTimer / 60);
             int secs = (int)(gameTimer) % 60;
             DrawText("GAME OVER", 672, 430, 72, RED);
@@ -152,6 +196,24 @@ int main() {
             EndDrawing();
             continue;
         }
+        // TẠO MÀN HÌNH KHI HOÀN THÀNH MÀN CHƠI
+        if (waveSystem.getCurrentWaveNumber() == 20 && waveSystem.hasBossBeenSpawned() && enemies.empty()) {
+            BeginDrawing ();
+            ClearBackground(BLACK); 
+            int total = (int)waveSystem.getInternalTimer();
+            int mins = (int)(total / 60);
+            int secs = (int)(total % 60);
+
+            DrawText("VICTORY!", 275, 150, 60, GOLD);
+            DrawText("CONGRATULATIONS!", 275, 230, 30, WHITE);
+            DrawText(TextFormat("FINAL SCORE: %d", player.getScore()), 315, 300, 22, WHITE);
+            DrawText(TextFormat("TIME SURVIVED: %02d:%02d", mins, secs), 305, 340, 22, WHITE);
+            EndDrawing();
+            if (IsKeyPressed(KEY_ESCAPE)) break;
+            continue;
+        }
+        float dt = GetFrameTime();
+        waveSystem.update(dt);
         gameTimer += dt; // Update game timer
 
         // Switch weapons with number keys
@@ -173,85 +235,83 @@ int main() {
         // RANGED ENEMY LOGIC (Type 3)
             enemyFireTimer += dt;
         for (auto e : enemies) {
-            if (e->getEnemyType() == 3) { 
-                // Calculate distance between this enemy and player
-                float d = distance(e->getX(), e->getY(), player.getX(), player.getY());
-                if (d < 250) { 
-                // If within range, stop moving and prepare to shoot
-                    e->setSpeed(0); 
-                    if (enemyFireTimer >= 1.5f) { 
-                        float sX = (player.getX() > e->getX()) ? 15 : -15;
-                        float sY = (player.getY() > e->getY()) ? 15 : -15;
-                // Spawn an enemy bullet targeting the player's current position
-                        Bullet* eb = new Bullet(e->getX() + sX, e->getY() + sY, player.getX(), player.getY());
+            if (e->getEnemyType() == 3 && e->canShoot()) { 
+                int bulletDmg = e->getDamage();
+                        Bullet* eb = new Bullet(e->getX(), e->getY(), player.getX(), player.getY(),bulletDmg);
                         eb->setIsEnemyBullet(true);
                         bullets.push_back(eb);
                         entities.push_back(eb);
-                    }
-                } else {
-                // If player is far away, resume chasing
-                    e->setSpeed(0.8f); 
-                }
+                } 
             }
-        }
-        // Reset shooting timer after 1.5 seconds
-        if (enemyFireTimer >= 1.5f) enemyFireTimer = 0;
 
         // Spawn enemies
-        // Spawn logic: Every second, spawn an enemy at a random angle around the player, at a fixed radius
-        const float FIXEL_SPAWN_RADIUS = 960.0f;
-        spawnTimer += dt;
-        if (spawnTimer >= 1.0f) {
+        // Spawn logic: spawn an enemy at a random angle around the player, at a fixed radius
+        const float PIXEL_SPAWN_RADIUS = 960.0f;
+        if (!waveSystem.isFinished())
+        spawnTimer += GetFrameTime();
+        // Calculate Spawn Position
+        if (spawnTimer >= waveSystem.getSpawnInterval()) {
             float randomAngle = GetRandomValue(0, 360) * (PI / 180.0f);
-            float spawnX = player.getX() + cos(randomAngle) * FIXEL_SPAWN_RADIUS;
-            float spawnY = player.getY() + sin(randomAngle) * FIXEL_SPAWN_RADIUS;
-        // Determine enemy type based on random value
-        int r=GetRandomValue(0, 99);
-        int type = 0;
-        if (r < 40) {
-            type = 0; // 40% chance for NORMAL
-        }   
-        else if (r < 70) {
-            type = 2; // 30% chance for FAST
-        }  
-        else if (r < 90) {
-            type = 1; // 20% chance for TANK
-        }
-        else {
-            type = 3; // 10% chance for RANGED
-        } 
-            Enemy* e = new Enemy(&player, type);
-            // Set spawn position based on random angle and fixed radius from player
+            float spawnX = player.getX() + cos(randomAngle) * PIXEL_SPAWN_RADIUS;
+            float spawnY = player.getY() + sin(randomAngle) * PIXEL_SPAWN_RADIUS;
+
+        // Triệu hồi BOSS
+        if (waveSystem.shouldSpawnBoss()) {
+            Boss* b = new Boss(&player, 0, &enemySprites[4]); 
+            b->setPosition(spawnX, spawnY);
+            b->setDamage(waveSystem.getCurrentWaveDamage() * 3);
+        // áp chỉ số cho boss
+            float multiplier = waveSystem.getStatMultiplier();
+            float diffHPMult = waveSystem.getDifficultyHPMultiplier();
+            b->setHp((int)(b->getHp() * multiplier * diffHPMult * 2.0f)); // Boss máu trâu gấp đôi
+        
+            enemies.push_back(b);
+            entities.push_back(b);
+            waveSystem.markBossSpawned(); // Đánh dấu đã thả Boss thành công
+            TraceLog(LOG_INFO, ">>> BOSS SPAWNED! <<<");
+        } else {
+            bool spawnMod = true;
+            if (waveSystem.getCurrentWaveNumber() == 20) {
+                if (GetRandomValue(0, 100) > 30) spawnMod = false;
+            }
+            if (spawnMod) {
+        // Create Enemy Object
+            int type =waveSystem.getRandomEnemyType();
+            Enemy* e = new Enemy(&player, type, &enemySprites[type]);
+
+        // Set Position and Apply Multipliers
             e->setPosition(spawnX, spawnY);
+            
+            float multiplier = waveSystem.getStatMultiplier();
+            float diffHPMult = waveSystem.getDifficultyHPMultiplier();
+            float diffSpMult = waveSystem.getDifficultySpeedMultiplier();
+            e->setHp((int)(e->getHp() * multiplier * diffHPMult));// Multiply both here
+            e->setSpeed(e->getSpeed() * diffSpMult);  //Add speed multiplier
+            e->setDamage(waveSystem.getCurrentWaveDamage()); 
+        // Add to Management Lists
             enemies.push_back(e);
             entities.push_back(e);
+            }
+        }
+        // Reset Timer
             spawnTimer = 0.0f;
         }
 
-        // Weapon system handles auto-attack (no manual shooting needed)
 
         // Bullet-enemy collisions
         for (size_t i = 0; i < enemies.size(); i++) {
+            float hitboxRadius = 15.0f; 
+            if (waveSystem.getCurrentWaveNumber() == 20) hitboxRadius = 70.0f; // Boss to thì hitbox to
             for (size_t j = 0; j < bullets.size(); j++) {
                 if (!bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), 
-                            enemies[i]->getX(), enemies[i]->getY()) < 15) {
+                            enemies[i]->getX(), enemies[i]->getY()) < hitboxRadius) {
                     enemies[i]->takeDamage(20);
                     bullets[j]->setX(-1000);
                     
                     if (enemies[i]->getHp() <= 0) {
-                        // Award score based on enemy type
-                        int scoreType = enemies[i]->getEnemyType();
-                        if (scoreType == 0) player.addScore(10); // NORMAL
-                        else if (scoreType == 1) player.addScore(15); // FAST
-                        else if (scoreType == 2) player.addScore(25); // TANK
-                        else if (scoreType == 3) player.addScore(20); // RANGED
-                        // Spawn an item at the enemy's position with EXP value based on enemy type
-                        int val = 10; // NORMAL EXP
-                        int type = enemies[i]->getEnemyType();
-                        if (type == 1) val = 15; // FAST EXP
-                        if (type == 2) val = 25;// TANK EXP 
-                        if (type == 3) val = 20;  // RANGED EXP
-                        Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), val, 0);
+                        player.addScore(enemies[i]->getScoreReward());
+                        int expVal = enemies[i]->getExpReward();
+                        Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), expVal, 0);
                         items.push_back(item);
                         entities.push_back(item);
                         removeEntity(entities, bullets[j]);
@@ -293,14 +353,14 @@ int main() {
         for (auto enemy : enemies) {
             if (distance(player.getX(), player.getY(), 
                         enemy->getX(), enemy->getY()) < 20) {
-                player.takeDamage(1);
+                player.takeDamage(enemy->getDamage());
             }
         }
 
         // Enemy bullet-player collisions
         for (size_t j = 0; j < bullets.size(); j++) {
             if (bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), player.getX(), player.getY()) < 15) {
-                player.takeDamage(1);
+                player.takeDamage(bullets[j]->getDamage());
                 removeEntity(entities, bullets[j]);
                 bullets.erase(bullets.begin() + j);
                 j--;
@@ -388,9 +448,13 @@ int main() {
         
         DrawText(TextFormat("Score: %d", player.getScore()), 24, 144, 36, WHITE);
         // Format time as MM:SS
-        int mins = (int)(gameTimer / 60);
-        int secs = (int)(gameTimer) % 60;
+        int total = (int)waveSystem.getInternalTimer();
+        int mins = (int)(total / 60);
+        int secs = (int)(total % 60);
         // Display survival time in MM:SS format
+        DrawText(TextFormat("Time: %02d:%02d", mins, secs), 330, 20, 25, WHITE);
+        Color waveColor = (waveSystem.getCurrentWaveNumber() > 3.0 ) ? RED : WHITE;
+        DrawText(TextFormat("Wave: %d", waveSystem.getCurrentWaveNumber()), 355, 50, 22, waveColor);
         DrawText(TextFormat("Time: %02d:%02d", mins, secs), 792, 36, 45, WHITE);
 
         Rectangle slot1 = {432, 860, 126, 126};
@@ -412,7 +476,10 @@ int main() {
         }
         EndDrawing();
     }
-
+    // giải phóng bộ nhớ 
+    for (int i=0; i<5 ; i++){
+        UnloadTexture(enemySprites[i]);
+    }
     CloseWindow();
     return 0;
 }

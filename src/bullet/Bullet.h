@@ -8,9 +8,10 @@ private:
     float speed = 5.0f;
     // false is player's bullet
     bool isEnemyBullet = false;
+    int damage;
 public:
     //Constructor
-    Bullet(float sx, float sy, float tx, float ty);
+    Bullet(float sx, float sy, float tx, float ty, int dmg);
     void update() override;
     void draw() override;
     
@@ -19,6 +20,7 @@ public:
     float getVelY() const { return vy; }
     float getSpeed() const { return speed; }
     bool getIsEnemyBullet() const { return isEnemyBullet; }
+    int getDamage() { return damage; }
     
     // Setters
     void setVelocity(float newVx, float newVy) { vx = newVx; vy = newVy; }
