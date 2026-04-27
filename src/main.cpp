@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "core/Entity.h"
+#include "core/CollisionMap.h"
 #include "player/Player.h"
 #include "enemy/Enemy.h"
 #include "skill/Skill.h"
@@ -18,6 +19,10 @@ using namespace std;
 int main() {
     InitWindow(1920, 1040, "PIXEL SURVIVOR");
     SetTargetFPS(60);
+    
+    // Initialize collision map for player movement restrictions
+    InitCollisionMap("Graphics/gameBgCollision.png");
+    
     // gắn đồ họa
     Texture2D enemySprites[5];
     enemySprites[0] = LoadTexture("Graphics/Ultron-Perler-Bead-Pattern-removebg-preview.png");
@@ -52,19 +57,16 @@ int main() {
 
     entities.push_back(&player);
     // --- KHỞI TẠO DANH SÁCH SKILLS ---
-    vector<Skill*> skills;
+    // --- KHOI TAO DANH SACH SKILLS ---
+    vector<Skill*> allSkills;
+    vector<Skill*> skillInventory;
 
-    // Mày muốn chơi skill nào thì push_back cái đó vào
-    skills.push_back(new Skill(&player, SkillType::LASER_BEAM));
-    skills.push_back(new Skill(&player, SkillType::HAMMER));
-    skills.push_back(new Skill(&player, SkillType::SHIELD));
-    skills.push_back(new Skill(&player, SkillType::SHURIKEN));
-    skills.push_back(new Skill(&player, SkillType::THUNDER_STRIKE));
-
-    // Thêm các skill vào danh sách entities để nó tự gọi hàm draw()
-    for (auto s : skills) {
-        entities.push_back(s);
-    }
+    allSkills.push_back(new Skill(&player, SKILL_LASER_BEAM));
+    allSkills.push_back(new Skill(&player, SKILL_HAMMER));
+    allSkills.push_back(new Skill(&player, SKILL_SHIELD));
+    allSkills.push_back(new Skill(&player, SKILL_SHURIKEN));
+    allSkills.push_back(new Skill(&player, SKILL_THUNDER_STRIKE));
+    for (auto s : allSkills) s->setLevel(0);
 
     // Create weapons once and keep their state across frames
     Weapon hammer(0);
@@ -132,10 +134,18 @@ int main() {
             // If menu just closed, apply the selected upgrade
             if (!upgradeSystem.isMenuActive() && !upgradeSystem.isGamePaused()) {
                 UpgradeOption selected = upgradeSystem.getSelectedUpgrade();
-                if (selected.weaponType >= 0) {
-                    // Apply the upgrade
+                if (selected.isSkill) {
+                    if (selected.isNewSkill) {
+                        if (selected.skillType < (int)allSkills.size() && (int)skillInventory.size() < 3) {
+                            Skill* newSkill = allSkills[selected.skillType];
+                            newSkill->setLevel(1);
+                            skillInventory.push_back(newSkill);
+                        }
+                    } else if (selected.skillPtr != nullptr) {
+                        selected.skillPtr->setLevel(selected.skillPtr->getLevel() + 1);
+                    }
+                } else if (selected.weaponType >= 0) {
                     if (selected.isNewWeapon) {
-                        // Find the weapon and unlock it
                         if (selected.weaponType < (int)allWeapons.size() && (int)weaponInventory.size() < 2) {
                             Weapon* newWeapon = allWeapons[selected.weaponType];
                             newWeapon->setLevel(1);
@@ -155,6 +165,7 @@ int main() {
             // Draw game behind the overlay
             BeginMode2D(player.getCamera());
             for (auto e : entities) e->draw();
+            for (auto s : skillInventory) s->draw();
             drawProjectiles(weaponProjectiles);
             EndMode2D();
             
@@ -177,7 +188,7 @@ int main() {
         
         // Show upgrade menu if needed
         if (shouldShowUpgrade) {
-            upgradeSystem.showUpgradeMenu(allWeapons, (int)weaponInventory.size(), 2);
+            upgradeSystem.showUpgradeMenu(allWeapons, allSkills, (int)weaponInventory.size(), 2, (int)skillInventory.size(), 3);
             shouldShowUpgrade = false;
             continue;  // Skip this frame's game update
         }
@@ -321,15 +332,8 @@ int main() {
         
         
         player.update();
-        for (auto s : skills) {
-            s->update(); // Cập nhật vị trí, timer của từng skill
-            
-            // Gọi tất cả trigger, skill nào đúng Type của nó thì nó mới chạy
-            s->triggerLaser(enemies);
-            s->triggerThunder(enemies);
-            s->triggerShieldCollision(enemies);
-            s->triggerHammerCollision(enemies);
-            s->triggerShurikenCollision(enemies);
+        for (auto s : skillInventory) {
+            s->update(enemies);
         }
 
 
@@ -367,10 +371,7 @@ int main() {
 
                     // NẾU CẤP ĐỘ THAY ĐỔI -> NÂNG CẤP SKILL
                     if (player.getLevel() > oldLevel) {
-                        TraceLog(LOG_INFO, "PLAYER LEVEL UP! Upgrading all skills...");
-                        for (auto s : skills) {
-                            s->levelUp(); // GỌI HÀM NÀY THÌ SKILL MỚI LÊN CẤP ĐƯỢC
-                        }
+                        shouldShowUpgrade = true;
                 }
                 }
                 removeEntity(entities, items[k]);
@@ -408,6 +409,7 @@ int main() {
         ClearBackground(BLACK);
         BeginMode2D(player.getCamera());
         for (auto e : entities) e->draw();
+        for (auto s : skillInventory) s->draw();
         drawProjectiles(weaponProjectiles); // Draw weapon projectiles
         
         // End camera mode
@@ -486,12 +488,24 @@ int main() {
 
         Rectangle slot1 = {432, 860, 126, 126};
         Rectangle slot2 = {648, 860, 126, 126};
+        Rectangle skillSlot1 = {1146, 860, 126, 126};
+        Rectangle skillSlot2 = {1362, 860, 126, 126};
+        Rectangle skillSlot3 = {1578, 860, 126, 126};
         DrawRectangleRec(slot1, DARKGRAY);
         DrawRectangleRec(slot2, DARKGRAY);
+        DrawRectangleRec(skillSlot1, DARKGRAY);
+        DrawRectangleRec(skillSlot2, DARKGRAY);
+        DrawRectangleRec(skillSlot3, DARKGRAY);
         DrawRectangleLinesEx(slot1, currentWeapon == (weaponInventory.size() > 0 ? weaponInventory[0] : nullptr) ? 5 : 4, WHITE);
         DrawRectangleLinesEx(slot2, currentWeapon == (weaponInventory.size() > 1 ? weaponInventory[1] : nullptr) ? 5 : 4, WHITE);
+        DrawRectangleLinesEx(skillSlot1, 4, WHITE);
+        DrawRectangleLinesEx(skillSlot2, 4, WHITE);
+        DrawRectangleLinesEx(skillSlot3, 4, WHITE);
         DrawText("1", slot1.x + 11, slot1.y + 7, 29, LIGHTGRAY);
         DrawText("2", slot2.x + 11, slot2.y + 7, 29, LIGHTGRAY);
+        DrawText("S1", skillSlot1.x + 11, skillSlot1.y + 7, 29, LIGHTGRAY);
+        DrawText("S2", skillSlot2.x + 11, skillSlot2.y + 7, 29, LIGHTGRAY);
+        DrawText("S3", skillSlot3.x + 11, skillSlot3.y + 7, 29, LIGHTGRAY);
 
         if (weaponInventory.size() > 0) {
             DrawText(TextFormat("Lv %d", weaponInventory[0]->getLevel()), slot1.x + 32, slot1.y - 32, 29, YELLOW);
@@ -500,6 +514,18 @@ int main() {
         if (weaponInventory.size() > 1) {
             DrawText(TextFormat("Lv %d", weaponInventory[1]->getLevel()), slot2.x + 32, slot2.y - 32, 29, YELLOW);
             DrawText(weaponInventory[1]->getName(), slot2.x + 19, slot2.y + 50, 22, WHITE);
+        }
+        if (skillInventory.size() > 0) {
+            DrawText(TextFormat("Lv %d", skillInventory[0]->getLevel()), skillSlot1.x + 32, skillSlot1.y - 32, 29, YELLOW);
+            DrawText(skillInventory[0]->getName(), skillSlot1.x + 8, skillSlot1.y + 50, 18, WHITE);
+        }
+        if (skillInventory.size() > 1) {
+            DrawText(TextFormat("Lv %d", skillInventory[1]->getLevel()), skillSlot2.x + 32, skillSlot2.y - 32, 29, YELLOW);
+            DrawText(skillInventory[1]->getName(), skillSlot2.x + 8, skillSlot2.y + 50, 18, WHITE);
+        }
+        if (skillInventory.size() > 2) {
+            DrawText(TextFormat("Lv %d", skillInventory[2]->getLevel()), skillSlot3.x + 32, skillSlot3.y - 32, 29, YELLOW);
+            DrawText(skillInventory[2]->getName(), skillSlot3.x + 8, skillSlot3.y + 50, 18, WHITE);
         }
         EndDrawing();
     }

@@ -1,11 +1,13 @@
 #include "UpgradeSystem.h"
 #include "../weapon/level.h"
+#include "../skill/SkillLevel.h"
 
-// Hàm hiển thị menu với các thông tin nâng cấp
-void UpgradeSystem::showUpgradeMenu(std::vector<Weapon*>& weapons, int weaponCount, int maxWeapons) {
+void UpgradeSystem::showUpgradeMenu(std::vector<Weapon*>& weapons, std::vector<Skill*>& skills,
+                                    int weaponCount, int maxWeapons,
+                                    int skillCount, int maxSkills) {
     active = true;
     paused = true;
-    delay = 1.5;
+    delay = 1.5f;
     selected = {};
 
     boxes[0] = {204, 268, 480, 450};
@@ -15,11 +17,10 @@ void UpgradeSystem::showUpgradeMenu(std::vector<Weapon*>& weapons, int weaponCou
     for (int i = 0; i < 3; i++) options[i] = {};
 
     int k = 0;
-    
-    // Kiểm tra số lượng vũ khí
+
     if (weaponCount < maxWeapons) {
-        for (int i = 0; i < 4 && k < 3; i++) {
-            if (i >= (int)weapons.size() || weapons[i] == nullptr || weapons[i]->getLevel() <= 0) {
+        for (int i = 0; i < (int)weapons.size() && k < 3; i++) {
+            if (weapons[i] != nullptr && weapons[i]->getLevel() <= 0) {
                 options[k].weaponType = i;
                 options[k].isNewWeapon = true;
                 k++;
@@ -27,10 +28,19 @@ void UpgradeSystem::showUpgradeMenu(std::vector<Weapon*>& weapons, int weaponCou
         }
     }
 
-    for (int i = 0; i < 4 && k < 3; i++) {
-        
-        // Kiểm tra số lượng, có hay ko, level trên 0 và dưới 10
-        if (i < (int)weapons.size() && weapons[i] != nullptr && weapons[i]->getLevel() > 0 && weapons[i]->getLevel() < 10) {
+    if (skillCount < maxSkills) {
+        for (int i = 0; i < (int)skills.size() && k < 3; i++) {
+            if (skills[i] != nullptr && skills[i]->getLevel() <= 0) {
+                options[k].isSkill = true;
+                options[k].skillType = i;
+                options[k].isNewSkill = true;
+                k++;
+            }
+        }
+    }
+
+    for (int i = 0; i < (int)weapons.size() && k < 3; i++) {
+        if (weapons[i] != nullptr && weapons[i]->getLevel() > 0 && weapons[i]->getLevel() < 10) {
             options[k].weaponType = i;
             options[k].upgradeLevel = weapons[i]->getLevel() + 1;
             options[k].weaponPtr = weapons[i];
@@ -38,14 +48,22 @@ void UpgradeSystem::showUpgradeMenu(std::vector<Weapon*>& weapons, int weaponCou
         }
     }
 
-    //  Kiểm tra có vũ khí
-    if (options[0].weaponType < 0) {
+    for (int i = 0; i < (int)skills.size() && k < 3; i++) {
+        if (skills[i] != nullptr && skills[i]->getLevel() > 0 && skills[i]->getLevel() < 10) {
+            options[k].isSkill = true;
+            options[k].skillType = i;
+            options[k].upgradeLevel = skills[i]->getLevel() + 1;
+            options[k].skillPtr = skills[i];
+            k++;
+        }
+    }
+
+    if (options[0].weaponType < 0 && options[0].skillType < 0 && !weapons.empty()) {
         options[0].weaponType = 0;
         options[0].isNewWeapon = true;
     }
 }
 
-// Hàm check click chuột khi bấm nâng cấp và bấm skip
 void UpgradeSystem::update() {
     if (!active) return;
     if (delay > 0) {
@@ -62,7 +80,8 @@ void UpgradeSystem::update() {
     }
 
     for (int i = 0; i < 3; i++) {
-        if (options[i].weaponType >= 0 && CheckCollisionPointRec(mouse, boxes[i]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        if ((options[i].weaponType >= 0 || options[i].skillType >= 0) &&
+            CheckCollisionPointRec(mouse, boxes[i]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             selected = options[i];
             active = false;
             paused = false;
@@ -71,7 +90,6 @@ void UpgradeSystem::update() {
     }
 }
 
-// Hàm vẽ giao diện nâng cấp
 void UpgradeSystem::draw() {
     if (!active) return;
 
@@ -87,24 +105,33 @@ void UpgradeSystem::draw() {
     DrawText("CHOOSE UPGRADE", 600, 106, 54, GOLD);
 
     for (int i = 0; i < 3; i++) {
-
-        // Kiểm tra có loại vũ khí ko
-        if (options[i].weaponType < 0) continue;
+        if (options[i].weaponType < 0 && options[i].skillType < 0) continue;
 
         DrawTexturePro(cardFrame, source, frameRects[i], {0.0f, 0.0f}, 0.0f, WHITE);
-        DrawText(getWeaponLevelWeaponName(options[i].weaponType), boxes[i].x + 60, boxes[i].y + 45, 40, WHITE);
-        DrawText(TextFormat("Level %d", options[i].upgradeLevel), boxes[i].x + 132, boxes[i].y + 153, 36, YELLOW);
-        DrawText(options[i].isNewWeapon ? "Unlock weapon" : getWeaponLevelData(options[i].weaponType, options[i].upgradeLevel).name.c_str(),
-                 boxes[i].x + 36, boxes[i].y + 261, 29, WHITE);
 
-        // Kiểm tra vũ khí mới 
-        if (options[i].isNewWeapon) DrawText("NEW", boxes[i].x + 180, boxes[i].y + 369, 36, GREEN);
+        const char* title = options[i].isSkill ? getSkillLevelSkillName(options[i].skillType)
+                                               : getWeaponLevelWeaponName(options[i].weaponType);
+        DrawText(title, boxes[i].x + 60, boxes[i].y + 45, 40, WHITE);
+        DrawText(TextFormat("Level %d", options[i].upgradeLevel), boxes[i].x + 132, boxes[i].y + 153, 36, YELLOW);
+
+        std::string upgradeName;
+        if (options[i].isSkill) {
+            upgradeName = options[i].isNewSkill ? "Unlock skill"
+                                                : getSkillLevelData(options[i].skillType, options[i].upgradeLevel).name;
+        } else {
+            upgradeName = options[i].isNewWeapon ? "Unlock weapon"
+                                                 : getWeaponLevelData(options[i].weaponType, options[i].upgradeLevel).name;
+        }
+        DrawText(upgradeName.c_str(), boxes[i].x + 36, boxes[i].y + 261, 29, WHITE);
+
+        if (options[i].isNewWeapon || options[i].isNewSkill) {
+            DrawText("NEW", boxes[i].x + 180, boxes[i].y + 369, 36, GREEN);
+        }
     }
 
     DrawRectangleRec(skipBox, DARKGREEN);
     DrawRectangleLinesEx(skipBox, 4, WHITE);
     DrawText("SKIP", skipBox.x + 108, skipBox.y + 27, 36, WHITE);
 
-    // Kiểm tra thời gian đợi khi mới vào menu cho mỗi lần giảm dần
     if (delay > 0) DrawText("WAIT...", 864, 788, 36, LIGHTGRAY);
 }

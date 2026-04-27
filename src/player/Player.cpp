@@ -1,6 +1,7 @@
 #include "Player.h"
 #include "raylib.h"
 #include <cmath>
+#include "../core/CollisionMap.h"
 
 Player::Player() {
     x = 960;
@@ -54,12 +55,36 @@ void Player::levelUp() {
 }
 
 void Player::update() {
-    // Movement
+    // Movement with collision detection
     Vector2 moveDir = {0, 0};
-    if (IsKeyDown(KEY_W)) { y -= speed; moveDir.y = -1; }
-    if (IsKeyDown(KEY_S)) { y += speed; moveDir.y = 1; }
-    if (IsKeyDown(KEY_A)) { x -= speed; moveDir.x = -1; }
-    if (IsKeyDown(KEY_D)) { x += speed; moveDir.x = 1; }
+    Vector2 newPos = {x, y};
+    
+    if (IsKeyDown(KEY_W)) { newPos.y -= speed; moveDir.y = -1; }
+    if (IsKeyDown(KEY_S)) { newPos.y += speed; moveDir.y = 1; }
+    if (IsKeyDown(KEY_A)) { newPos.x -= speed; moveDir.x = -1; }
+    if (IsKeyDown(KEY_D)) { newPos.x += speed; moveDir.x = 1; }
+    
+    // Check collision before moving
+    // Try moving in both X and Y directions
+    if (IsPositionWalkable(newPos.x, newPos.y, 18.0f)) {
+        x = newPos.x;
+        y = newPos.y;
+    } else {
+        // If can't move diagonally, try moving in each direction separately
+        bool canMoveX = IsPositionWalkable(newPos.x, y, 18.0f);
+        bool canMoveY = IsPositionWalkable(x, newPos.y, 18.0f);
+        
+        if (canMoveX && canMoveY) {
+            // Can move in either direction individually, try both
+            x = newPos.x;
+            y = newPos.y;
+        } else if (canMoveX) {
+            x = newPos.x;
+        } else if (canMoveY) {
+            y = newPos.y;
+        }
+        // If neither direction works, don't move (blocked by obstacle)
+    }
     
     // Update camera to follow player
     camera.target = (Vector2){ x, y };

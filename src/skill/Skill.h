@@ -1,82 +1,65 @@
-#pragma once
-#include "../core/Entity.h"
-#include "../player/Player.h"
+#ifndef SKILL_H
+#define SKILL_H
+
 #include "raylib.h"
+#include "../player/Player.h"
+#include "../enemy/Enemy.h"
 #include <vector>
 
-class Enemy;
+const int SKILL_AUTO_BALLS = 0;
+const int SKILL_LASER_BEAM = 1;
+const int SKILL_THUNDER_STRIKE = 2;
+const int SKILL_SHURIKEN = 3;
+const int SKILL_SHIELD = 4;
+const int SKILL_HAMMER = 5;
 
-enum class SkillType { AUTO_BALLS, LASER_BEAM, THUNDER_STRIKE, SHURIKEN, SHIELD, HAMMER };
-
-class Skill : public Entity {
-private:
-    Player* player;
-    SkillType type;
-    int level;
-    float damage;
-    float radius;
-    float angle;
-    int num_particles;
+struct SkillStats {
+    int damage;
     float cooldown;
+    float range;
+    float speed;
+    int count;
+    float effectRadius;
+    bool special;
+};
 
-    // Biến logic bổ trợ
-    bool is_dual_laser;
-    bool is_hammer_riu;
-    int num_shields;
-    int thunder_chain_count;
+struct SkillProjectile {
+    Vector2 position;
+    Vector2 velocity;
+    float lifeTime;
+    float radius;
+    float damage;
+    Color color;
+    int type;
+    float angle;
+};
 
-    Texture2D shurikenTexture; 
-    float selfRotation;
-
-    bool is_laser_active;
-    float laser_length;
-    float laser_timer;
-    float laser_cooldown_timer;
-    Vector2 laser_direction;
-    float laser_width;
-
-    float thunder_timer;
-    float thunder_cooldown; // Giữ lại để khớp logic thunder của mày
-    Texture2D thunderTexture;
-    Vector2 lastThunderPos;
-    bool showThunder = false;
-    std::vector<Vector2> thunderPositions; // Lưu vị trí các con quái trúng sét
-    float thunderEffectTimer = 0.0f;       // Timer riêng để hiển thị hình ảnh
-
-    struct Shield {
-        Vector2 pos; Vector2 speed; int bounces; bool active; float radius; float rotation;
-    };
-    std::vector<Shield> activeShields;
-    float shield_timer;
-    Texture2D shieldTexture; 
-
-    struct Hammer {
-        Vector2 pos; Vector2 speed; bool active; float rotation; bool isRiu;void* lastHitEnemy;
-    };
-    std::vector<Hammer> activeHammers;
-    float hammer_timer;
-    Texture2D hammerTexture;
-    Texture2D axeTexture;
+class Skill {
+private:
+    int skillType;
+    int skillLevel;
+    SkillStats stats;
+    Player* player;
+    float currentCooldownTimer;
+    float orbitAngle;
+    Vector2 laserDirection;
+    std::vector<SkillProjectile> projectiles;
 
     void updateSkillStats();
-    Enemy* findNearestEnemy(const std::vector<Enemy*>& enemies);
 
 public:
-    Skill(Player* p, SkillType skillType);
-    ~Skill();
+    Skill(Player* owner, int type);
 
-    void update() override;
-    void draw() override;
-    void levelUp();
+    const char* getName() const;
+    int getLevel() const;
+    void setLevel(int newLevel);
 
-    void triggerLaser(std::vector<Enemy*>& enemies);
-    void triggerThunder(std::vector<Enemy*>& enemies);
-    void triggerShieldCollision(std::vector<Enemy*>& enemies);
-    void triggerHammerCollision(std::vector<Enemy*>& enemies);
-    void triggerShurikenCollision(std::vector<Enemy*>& enemies);
-    // Giữ lại các hàm trống để main.cpp không báo lỗi
-    void triggerShield(std::vector<Enemy*>& enemies) {} 
-    void triggerHammer(std::vector<Enemy*>& enemies) {}
-
-    bool isLaserActive() const { return is_laser_active; }
+    void attack(const std::vector<Enemy*>& enemies);
+    void update(std::vector<Enemy*>& enemies);
+    void draw() const;
 };
+
+void updateSkillProjectiles(std::vector<SkillProjectile>& projectiles, std::vector<Enemy*>& enemies, float deltaTime);
+void drawSkillProjectiles(const std::vector<SkillProjectile>& projectiles);
+
+#endif
