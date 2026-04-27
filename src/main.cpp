@@ -11,19 +11,8 @@
 #include "Item/Item.h"
 #include "wave/WaveManager.h"
 #include "boss/Boss.h"
-using namespace std;
-
-float distance(float x1, float y1, float x2, float y2) {
-    float dx = x2 - x1, dy = y2 - y1;
-    return sqrt(dx*dx + dy*dy);
-}
-
-void removeEntity(vector<Entity*>& entities, Entity* entity) {
-    entities.erase(remove(entities.begin(), entities.end(), entity), entities.end());
-}
 #include "weapon/weapon.h"
 #include "upgrade/UpgradeSystem.h"
-
 using namespace std;
 
 int main() {
@@ -35,8 +24,7 @@ int main() {
     enemySprites[1] = LoadTexture("Graphics/Venom-removebg-preview.png");
     enemySprites[2] = LoadTexture("Graphics/Supreme-Leader-Ultron-removebg-preview.png");
     enemySprites[3] = LoadTexture("Graphics/Loki-removebg-preview.png");
-    enemySprites[4] = LoadTexture("Graphics/Thanos Perler Bead Pattern.png")
-    SetTargetFPS(60);
+    enemySprites[4] = LoadTexture("Graphics/Thanos Perler Bead Pattern.png");
  
     Player player;
     WaveManager waveSystem;
@@ -48,6 +36,7 @@ int main() {
     float enemyFireTimer=0; // Track cooldown for ranged enemies
     float spawnTimer = 0.0f; // Track time for spawning enemies
     float hpSpawnTimer = 0.0f; // Track time for spawning HP items
+    float gameTimer = 0.0f; // Track total survival time
     int currentDiffID  = -1 ;// trạng thái chờ chọn màn chơi
     bool gameStarted = false; // điều kiện để bắt đầu cho quái ra chơi
     
@@ -104,17 +93,16 @@ int main() {
             }
             BeginDrawing();
             ClearBackground(BLACK);
-            DrawText("Select Difficulty Level:", 280, 220, 20, GRAY);
-            DrawText("[1] EASY - Low Density / Weak Enemies", 240, 270, 20, GREEN);
-            DrawText("[2] HARD - Standard Operations", 240, 310, 20, ORANGE);
-            DrawText("[3] HELL - High Density / Elite Enemies", 240, 350, 20, RED);
+            DrawText("Select Difficulty Level:", 672, 220, 36, GRAY);
+            DrawText("[1] EASY - Low Density / Weak Enemies", 576, 320, 36, GREEN);
+            DrawText("[2] HARD - Standard Operations", 576, 390, 36, ORANGE);
+            DrawText("[3] HELL - High Density / Elite Enemies", 576, 460, 36, RED);
         
-            DrawText("Press key to deploy...", 300, 450, 15, DARKGRAY);
+            DrawText("Press key to deploy...", 720, 620, 27, DARKGRAY);
             EndDrawing();
             continue;
 
         }
-        hpSpawnTimer += GetFrameTime();
         float dt = GetFrameTime();
         
         // Check if upgrade menu is active
@@ -186,7 +174,6 @@ int main() {
             BeginDrawing();
             ClearBackground(BLACK);
             // Format time as MM:SS
-            int total = (int)waveSystem.getInternalTimer();
             int mins = (int)(gameTimer / 60);
             int secs = (int)(gameTimer) % 60;
             DrawText("GAME OVER", 672, 430, 72, RED);
@@ -204,15 +191,14 @@ int main() {
             int mins = (int)(total / 60);
             int secs = (int)(total % 60);
 
-            DrawText("VICTORY!", 275, 150, 60, GOLD);
-            DrawText("CONGRATULATIONS!", 275, 230, 30, WHITE);
-            DrawText(TextFormat("FINAL SCORE: %d", player.getScore()), 315, 300, 22, WHITE);
-            DrawText(TextFormat("TIME SURVIVED: %02d:%02d", mins, secs), 305, 340, 22, WHITE);
+            DrawText("VICTORY!", 660, 180, 108, GOLD);
+            DrawText("CONGRATULATIONS!", 612, 300, 54, WHITE);
+            DrawText(TextFormat("FINAL SCORE: %d", player.getScore()), 756, 420, 40, WHITE);
+            DrawText(TextFormat("TIME SURVIVED: %02d:%02d", mins, secs), 732, 492, 40, WHITE);
             EndDrawing();
             if (IsKeyPressed(KEY_ESCAPE)) break;
             continue;
         }
-        float dt = GetFrameTime();
         waveSystem.update(dt);
         gameTimer += dt; // Update game timer
 
@@ -452,9 +438,8 @@ int main() {
         int mins = (int)(total / 60);
         int secs = (int)(total % 60);
         // Display survival time in MM:SS format
-        DrawText(TextFormat("Time: %02d:%02d", mins, secs), 330, 20, 25, WHITE);
         Color waveColor = (waveSystem.getCurrentWaveNumber() > 3.0 ) ? RED : WHITE;
-        DrawText(TextFormat("Wave: %d", waveSystem.getCurrentWaveNumber()), 355, 50, 22, waveColor);
+        DrawText(TextFormat("Wave: %d", waveSystem.getCurrentWaveNumber()), 792, 96, 40, waveColor);
         DrawText(TextFormat("Time: %02d:%02d", mins, secs), 792, 36, 45, WHITE);
 
         Rectangle slot1 = {432, 860, 126, 126};

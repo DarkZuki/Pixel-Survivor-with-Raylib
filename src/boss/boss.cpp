@@ -56,7 +56,7 @@ void Boss::update() {
 void Boss::draw() {
     if (texture !=nullptr){
         // ep khung hinh voi hit box 70px
-        float targetSize = 140.0f;
+        float targetSize = 240.0f;
         // tạo cấu hình vùng ảnh
         Rectangle source = { 0.0f, 0.0f, (float)texture->width* rotation, (float)texture->height };
         // tạo cấu hình vùng va chạm
@@ -67,21 +67,21 @@ void Boss::draw() {
         DrawTexturePro(*texture, source, dest, origin, 0.0f, WHITE);
     }
     // EP THANH MAU VA THANH GIAP
-    float barWidth = 120.0f; 
+    float barWidth = 220.0f; 
     float barX= x - barWidth / 2.0f;  // Căn giữa theo tâm x
-    float barY_HP = y - 85.0f;        // Nằm trên đỉnh Boss một chút
-    float barY_Armor = y - 73.0f;     // Nằm ngay dưới thanh máu
-    DrawText(TextFormat("HP: %d", hp), x - 15, y - 20, 8, WHITE);
+    float barY_HP = y - 145.0f;        // Nằm trên đỉnh Boss một chút
+    float barY_Armor = y - 123.0f;     // Nằm ngay dưới thanh máu
+    DrawText(TextFormat("HP: %d", hp), x - 28, y - 38, 16, WHITE);
     // Vẽ thanh Máu (Đỏ)
-    DrawRectangle(barX, barY_HP, barWidth, 12, BLACK); // Viền/Nền
-    DrawRectangle(barX, barY_HP, (int)(barWidth * hpPercent), 12, RED);
-    DrawRectangleLines(barX, barY_HP, barWidth, 12, LIGHTGRAY); // Viền cho sắc nét
+    DrawRectangle(barX, barY_HP, barWidth, 20, BLACK); // Viền/Nền
+    DrawRectangle(barX, barY_HP, (int)(barWidth * hpPercent), 20, RED);
+    DrawRectangleLines(barX, barY_HP, barWidth, 20, LIGHTGRAY); // Viền cho sắc nét
     // Vẽ thanh Giáp (Xanh SkyBlue)
     if (currentArmor > 0) {
-        DrawRectangle(barX, barY_Armor, (int)(barWidth * armorPercent), 8, SKYBLUE);
-        DrawRectangleLines(barX, barY_Armor, barWidth, 8, BLUE);
+        DrawRectangle(barX, barY_Armor, (int)(barWidth * armorPercent), 14, SKYBLUE);
+        DrawRectangleLines(barX, barY_Armor, barWidth, 14, BLUE);
     }
 
     // Vẽ Text tên Boss cho uy tín
-    DrawText("THANOS", barX, barY_HP - 15, 10, GOLD);
+    DrawText("THANOS", barX, barY_HP - 28, 18, GOLD);
 }

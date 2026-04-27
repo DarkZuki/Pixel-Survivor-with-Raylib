@@ -1,7 +1,7 @@
 #include "Enemy.h"
 #include <cmath>
 
-Enemy::Enemy(Player* p, int type, Texture2D* tex) : player(p), enemyType(type), texture(tex) {
+Enemy::Enemy(Player* p, int type, Texture2D* tex) : player(p), texture(tex), enemyType(type) {
     // Set hp and speed based on enemy type
     if (type == 0) { // NORMAL
         hp = 30;
@@ -52,7 +52,7 @@ bool Enemy::canShoot(){
 
 void Enemy::draw() {
     if (texture !=nullptr){
-        float targetSize = 32.0f;
+        float targetSize = 70.0f;
         // tạo cấu hình vùng ảnh
         Rectangle source = { 0.0f, 0.0f, (float)texture->width* rotation, (float)texture->height };
         // tạo cấu hình vùng va chạm
@@ -62,5 +62,11 @@ void Enemy::draw() {
         // Vẽ
         DrawTexturePro(*texture, source, dest, origin, 0.0f, WHITE);
     }
-    DrawText(TextFormat("HP: %d", hp), x - 15, y - 20, 8, WHITE);
+    DrawText(TextFormat("HP: %d", hp), x - 28, y - 38, 16, WHITE);
+}
+
+void removeEnemy(std::vector<Entity*>& entities, std::vector<Enemy*>& enemies, int idx) {
+    removeEntity(entities, enemies[idx]);
+    delete enemies[idx];
+    enemies.erase(enemies.begin() + idx);
 }
