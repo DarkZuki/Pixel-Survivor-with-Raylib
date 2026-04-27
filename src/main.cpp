@@ -69,7 +69,7 @@ int main() {
             if (IsKeyPressed(KEY_TWO))   { currentDiffID = 1; gameStarted = true; }
             if (IsKeyPressed(KEY_THREE)) { currentDiffID = 2; gameStarted = true; }
             if (gameStarted){
-                waveSystem.setDifficulty(currentDiffID);
+                waveSystem.setDifficulty(currentDiffID); 
             }
             BeginDrawing();
             ClearBackground(BLACK);
@@ -229,8 +229,6 @@ int main() {
 
        // Skill-enemy collisions
         for (int i = (int)enemies.size() - 1; i >= 0; i--) {
-            float hitboxRadius = 15.0f;
-            if (waveSystem.getCurrentWaveNumber() == 20) hitboxRadius = 70.0f;
             if (distance(skill->getX(), skill->getY(), 
                         enemies[i]->getX(), enemies[i]->getY()) < 15) {
                 enemies[i]->takeDamage(10);
@@ -245,8 +243,6 @@ int main() {
 
         // Player-enemy collisions
         for (auto enemy : enemies) {
-            float playerHitbox = 20.0f;
-            if (waveSystem.getCurrentWaveNumber() == 20) playerHitbox = 50.0f; // Boss chạm nhẹ là mất máu
             if (distance(player.getX(), player.getY(), 
                         enemy->getX(), enemy->getY()) < 20) {
                 player.takeDamage(enemy->getDamage());

@@ -38,7 +38,7 @@ void Enemy::update() {
         fireTimer = 0.0f;
         }
         // cập nhật góc quay
-        rotation = atan2f(dy,dx) * (180.0f / PI);
+        rotation = (dx < 0) ? -1.0f : 1.0f;
     }
 }
 // kiem tra dieu kien ra dan cua quai RANGED
@@ -54,13 +54,13 @@ void Enemy::draw() {
     if (texture !=nullptr){
         float targetSize = 32.0f;
         // tạo cấu hình vùng ảnh
-        Rectangle source = { 0.0f, 0.0f, (float)texture->width, (float)texture->height };
+        Rectangle source = { 0.0f, 0.0f, (float)texture->width* rotation, (float)texture->height };
         // tạo cấu hình vùng va chạm
         Rectangle dest = { x, y, targetSize, targetSize };
         // thiết lập điểm gốc (tâm hình chữ nhật) để tính góc xoay từ tâm
         Vector2 origin = { targetSize / 2.0f, targetSize / 2.0f };
         // Vẽ
-        DrawTexturePro(*texture, source, dest, origin, rotation, WHITE);
+        DrawTexturePro(*texture, source, dest, origin, 0.0f, WHITE);
     }
     DrawText(TextFormat("HP: %d", hp), x - 15, y - 20, 8, WHITE);
 }
