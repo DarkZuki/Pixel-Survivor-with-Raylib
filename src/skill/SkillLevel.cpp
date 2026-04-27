@@ -1,4 +1,4 @@
-#include "level.h"
+#include "SkillLevel.h"
 #include "Skill.h" // Để dùng enum SkillType
 
 const char* getSkillName(int skillType) {
@@ -17,6 +17,10 @@ SkillLevelData getSkillLevelData(int skillType, int level) {
     SkillLevelData data;
     data.level = level;
     data.isSpecial = (level == 10);
+    data.damageBonus = 0.0f;
+    data.rangeBonus = 0.0f;
+    data.cooldownMult = 1.0f;
+    data.particleBonus = 0;
     
     data.name = "Nâng Cấp";
     data.description = "Cải thiện sức mạnh kỹ năng.";

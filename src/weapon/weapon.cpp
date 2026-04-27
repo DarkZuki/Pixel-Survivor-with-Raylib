@@ -1,30 +1,7 @@
 #include "weapon.h"
 #include "level.h"
 #include "raylib.h"
-#include <cmath>
-
-namespace {
-float DistanceVec(Vector2 a, Vector2 b) {
-    float dx = b.x - a.x;
-    float dy = b.y - a.y;
-    return sqrtf(dx * dx + dy * dy);
-}
-
-Vector2 NormalizeVec(Vector2 v) {
-    float length = sqrtf(v.x * v.x + v.y * v.y);
-    if (length <= 0.0f) return {1.0f, 0.0f};
-    return {v.x / length, v.y / length};
-}
-
-Vector2 RotateVec(Vector2 v, float angle) {
-    float cosine = cosf(angle);
-    float sine = sinf(angle);
-    return {
-        v.x * cosine - v.y * sine,
-        v.x * sine + v.y * cosine
-    };
-}
-}
+#include "raymath.h"
 
 Weapon::Weapon(int type) {
     weaponType = type;
@@ -77,7 +54,7 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
         case 0:
             for (Enemy* enemy : enemies) {
                 if (!enemy) continue;
-                if (DistanceVec(playerPos, {enemy->getX(), enemy->getY()}) <= stats.range) {
+                if (Vector2Distance(playerPos, {enemy->getX(), enemy->getY()}) <= stats.range) {
                     enemy->takeDamage(totalDamage);
                     if (stats.doubleHit) enemy->takeDamage(totalDamage);
                 }
@@ -91,12 +68,12 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
             for (Enemy* enemy : enemies) {
                 if (!enemy) continue;
                 if (shotsFired >= stats.count) break;
-                if (DistanceVec(playerPos, {enemy->getX(), enemy->getY()}) <= stats.range) {
+                if (Vector2Distance(playerPos, {enemy->getX(), enemy->getY()}) <= stats.range) {
                     
                     // Thuật toán kiểm tra vị trí enemies trong bán kính cho phép auto bắn
                     Vector2 dir = {enemy->getX() - playerPos.x, enemy->getY() - playerPos.y};
                     if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
-                    else dir = NormalizeVec(dir);
+                    else dir = Vector2Normalize(dir);
                     projectiles.push_back({playerPos, {dir.x * stats.speed, dir.y * stats.speed},
                                            2.0f, 6.0f, (float)totalDamage, PURPLE, 0, 0});
                     shotsFired++;
@@ -109,13 +86,13 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
         case 2: {
             Vector2 dir = {targetPosition.x - playerPos.x, targetPosition.y - playerPos.y};
             if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
-            else dir = NormalizeVec(dir);
+            else dir = Vector2Normalize(dir);
             for (int i = 0; i < stats.count; i++) {
                 
                 // Thuật toán căn chỉnh góc độ khi số lượng dao tăng
                 float angleOffset = (float)(i - stats.count / 2) * 8.0f;
                 if (stats.count % 2 == 0) angleOffset += 4.0f;
-                Vector2 v = RotateVec(dir, angleOffset * DEG2RAD);
+                Vector2 v = Vector2Rotate(dir, angleOffset * DEG2RAD);
                 projectiles.push_back({playerPos, {v.x * stats.speed, v.y * stats.speed},
                                        1.0f, 4.0f, (float)totalDamage, SKYBLUE, 0, 0});
             }
@@ -126,13 +103,13 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
         case 3: {
             Vector2 dir = {targetPosition.x - playerPos.x, targetPosition.y - playerPos.y};
             if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f};
-            else dir = NormalizeVec(dir);
+            else dir = Vector2Normalize(dir);
             for (int i = 0; i < stats.count; i++) {
 
                 // Thuật toán căn chỉnh góc độ khi số lượng đạn tăng
                 float angleOffset = (float)(i - stats.count / 2) * 10.0f;
                 if (stats.count % 2 == 0) angleOffset += 5.0f;
-                Vector2 v = RotateVec(dir, angleOffset * DEG2RAD);
+                Vector2 v = Vector2Rotate(dir, angleOffset * DEG2RAD);
                 projectiles.push_back({playerPos, {v.x * stats.speed, v.y * stats.speed},
                                        2.0f, 8.0f, (float)totalDamage, PURPLE, 2, stats.explosionRadius});
             }
@@ -163,7 +140,7 @@ void updateProjectiles(std::vector<WeaponProjectile>& projectiles, std::vector<E
                     if (p.type == 2) {
                         for (Enemy* splashEnemy : enemies) {
                             if (!splashEnemy) continue;
-                            if (DistanceVec(p.position, {splashEnemy->getX(), splashEnemy->getY()}) <= p.angle) {
+                            if (Vector2Distance(p.position, {splashEnemy->getX(), splashEnemy->getY()}) <= p.angle) {
                                 splashEnemy->takeDamage((int)(p.damage / 2));
                             }
                         }

@@ -65,6 +65,30 @@ int main() {
     for (auto s : skills) {
         entities.push_back(s);
     }
+
+    // Create weapons once and keep their state across frames
+    Weapon hammer(0);
+    Weapon magicWand(1);
+    Weapon knife(2);
+    Weapon spellBook(3);
+    Weapon* currentWeapon = nullptr;
+
+    UpgradeSystem upgradeSystem;
+
+    hammer.setLevel(0);
+    magicWand.setLevel(0);
+    knife.setLevel(0);
+    spellBook.setLevel(0);
+
+    vector<Weapon*> allWeapons;
+    allWeapons.push_back(&hammer);
+    allWeapons.push_back(&magicWand);
+    allWeapons.push_back(&knife);
+    allWeapons.push_back(&spellBook);
+
+    vector<Weapon*> weaponInventory;
+    bool shouldShowUpgrade = true;
+    int previousLevel = 1;
     
     while (!WindowShouldClose()) { 
 
@@ -79,42 +103,9 @@ int main() {
         if (!isPaused) {
                 
 
-        hpSpawnTimer += GetFrameTime();
-    // Create weapons
-    Weapon hammer(0);     // Hammer
-    Weapon magicWand(1);  // Magic Wand
-    Weapon knife(2);      // Knife
-    Weapon spellBook(3);  // Spell Book
-    Weapon* currentWeapon = nullptr;
-    
-    // Create upgrade system
-    UpgradeSystem upgradeSystem;
-    
-    // Track which weapons are unlocked (level > 0 means unlocked)
-    // Weapons start at level 1 by default in the constructor
-    // We'll manage weapon unlocking through the upgrade system
-    hammer.setLevel(0);   // Start with no weapons unlocked
-    magicWand.setLevel(0);
-    knife.setLevel(0);
-    spellBook.setLevel(0);
-    
-    // Vector to track all weapons for the upgrade system
-    vector<Weapon*> allWeapons;
-    allWeapons.push_back(&hammer);
-    allWeapons.push_back(&magicWand);
-    allWeapons.push_back(&knife);
-    allWeapons.push_back(&spellBook);
-
-    vector<Weapon*> weaponInventory;
-    
-    // Track if we need to show upgrade menu
-    bool shouldShowUpgrade = true;
-    int previousLevel = 1;
-
-    while (!WindowShouldClose()) {
-      if (!gameStarted){
+        if (!gameStarted){
             // dùng phím chọn qua chế độ chơi nào
-            if (IsKeyPressed(KEY_ONE))   { currentDiffID = 0; gameStarted = true; waveSystem.skipToWave(20);}
+            if (IsKeyPressed(KEY_ONE))   { currentDiffID = 0; gameStarted = true; }
             if (IsKeyPressed(KEY_TWO))   { currentDiffID = 1; gameStarted = true; }
             if (IsKeyPressed(KEY_THREE)) { currentDiffID = 2; gameStarted = true; }
             if (gameStarted){
@@ -228,8 +219,6 @@ int main() {
             if (IsKeyPressed(KEY_ESCAPE)) break;
             continue;
         }
-        gameTimer += GetFrameTime(); // Update game timer
-            
         waveSystem.update(dt);
         gameTimer += dt; // Update game timer
 
@@ -321,7 +310,7 @@ int main() {
             if (waveSystem.getCurrentWaveNumber() == 20) hitboxRadius = 70.0f; // Boss to thì hitbox to
             for (size_t j = 0; j < bullets.size(); j++) {
                 if (!bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), 
-                    enemies[i]->getX(), enemies[i]->getY()) < 15) {
+                    enemies[i]->getX(), enemies[i]->getY()) < hitboxRadius) {
                     
                     enemies[i]->takeDamage(20); // Chỉ trừ máu
                     bullets[j]->setX(-1000);    // Đánh dấu xóa đạn
@@ -341,49 +330,6 @@ int main() {
             s->triggerShieldCollision(enemies);
             s->triggerHammerCollision(enemies);
             s->triggerShurikenCollision(enemies);
-                            enemies[i]->getX(), enemies[i]->getY()) < hitboxRadius) {
-                    enemies[i]->takeDamage(20);
-                    bullets[j]->setX(-1000);
-                    
-                    if (enemies[i]->getHp() <= 0) {
-                        player.addScore(enemies[i]->getScoreReward());
-                        int expVal = enemies[i]->getExpReward();
-                        Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), expVal, 0);
-                        items.push_back(item);
-                        entities.push_back(item);
-                        removeEntity(entities, bullets[j]);
-                        removeEnemy(entities, enemies, i);
-                        i--;
-                        break;
-                    }
-                }
-            }
-        }
-
-       // Skill-enemy collisions
-        for (int i = (int)enemies.size() - 1; i >= 0; i--) {
-            if (distance(skill->getX(), skill->getY(), 
-                        enemies[i]->getX(), enemies[i]->getY()) < 15) {
-                enemies[i]->takeDamage(10);
-                if (enemies[i]->getHp() <= 0) {
-                    int scoreType = enemies[i]->getEnemyType();
-                    if (scoreType == 0) player.addScore(10); // NORMAL
-                    else if (scoreType == 1) player.addScore(15); // FAST
-                    else if (scoreType == 2) player.addScore(25); // TANK
-                    else if (scoreType == 3) player.addScore(20); // RANGED
-
-                    int val = 10; // NORMAL EXP
-                    int type = enemies[i]->getEnemyType();
-                    if (type == 1) val = 15; // FAST EXP
-                    if (type == 2) val = 25; // TANK EXP
-                    if (type == 3) val = 20; // RANGED EXP
-
-                    Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), val, 0);
-                    items.push_back(item);
-                    entities.push_back(item);
-                    removeEnemy(entities, enemies, i);
-                }
-            }
         }
 
 
@@ -435,30 +381,21 @@ int main() {
             
         }
     }
-    for (int i = (int)enemies.size() - 1; i >= 0; i--) {
-    if (enemies[i]->getHp() <= 0) {
-        // 1. Tính toán giá trị EXP dựa trên loại quái
-        int val = 10;
-        int type = enemies[i]->getEnemyType();
-        if (type == 1) val = 15; // FAST
-        if (type == 2) val = 25; // TANK
-        if (type == 3) val = 20; // RANGED
-
         // Check for dead enemies from weapon bullets
         for (int i = (int)enemies.size() - 1; i >= 0; i--) {
             if (enemies[i]->getHp() <= 0) {
-                // Award score based on enemy type
                 int scoreType = enemies[i]->getEnemyType();
-                if (scoreType == 0) player.addScore(10); // NORMAL
-                else if (scoreType == 1) player.addScore(15); // FAST
-                else if (scoreType == 2) player.addScore(25); // TANK
-                else if (scoreType == 3) player.addScore(20); // RANGED
-                // Spawn an item at the enemy's position with EXP value based on enemy type
-                int val = 10; // NORMAL EXP
+                if (scoreType == 0) player.addScore(10);
+                else if (scoreType == 1) player.addScore(15);
+                else if (scoreType == 2) player.addScore(25);
+                else if (scoreType == 3) player.addScore(20);
+
+                int val = 10;
                 int type = enemies[i]->getEnemyType();
-                if (type == 1) val = 15; // FAST EXP
-                if (type == 2) val = 25;// TANK EXP
-                if (type == 3) val = 20;  // RANGED EXP
+                if (type == 1) val = 15;
+                if (type == 2) val = 25;
+                if (type == 3) val = 20;
+
                 Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), val, 0);
                 items.push_back(item);
                 entities.push_back(item);
@@ -469,6 +406,7 @@ int main() {
         // Draw
         BeginDrawing();
         ClearBackground(BLACK);
+        BeginMode2D(player.getCamera());
         for (auto e : entities) e->draw();
         drawProjectiles(weaponProjectiles); // Draw weapon projectiles
         
@@ -539,12 +477,12 @@ int main() {
         DrawText(TextFormat("Score: %d", player.getScore()), 24, 144, 36, WHITE);
         // Format time as MM:SS
         int total = (int)waveSystem.getInternalTimer();
-        int mins = (int)(total / 60);
-        int secs = (int)(total % 60);
+        int waveMins = (int)(total / 60);
+        int waveSecs = (int)(total % 60);
         // Display survival time in MM:SS format
         Color waveColor = (waveSystem.getCurrentWaveNumber() > 3.0 ) ? RED : WHITE;
         DrawText(TextFormat("Wave: %d", waveSystem.getCurrentWaveNumber()), 792, 96, 40, waveColor);
-        DrawText(TextFormat("Time: %02d:%02d", mins, secs), 792, 36, 45, WHITE);
+        DrawText(TextFormat("Time: %02d:%02d", waveMins, waveSecs), 792, 36, 45, WHITE);
 
         Rectangle slot1 = {432, 860, 126, 126};
         Rectangle slot2 = {648, 860, 126, 126};
