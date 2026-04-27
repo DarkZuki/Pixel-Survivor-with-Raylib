@@ -21,23 +21,21 @@ float distance(float x1, float y1, float x2, float y2) {
 void removeEntity(vector<Entity*>& entities, Entity* entity) {
     entities.erase(remove(entities.begin(), entities.end(), entity), entities.end());
 }
+#include "weapon/weapon.h"
+#include "upgrade/UpgradeSystem.h"
 
-void removeEnemy(vector<Entity*>& entities, vector<Enemy*>& enemies, int idx) {
-    removeEntity(entities, enemies[idx]);
-    delete enemies[idx];
-    enemies.erase(enemies.begin() + idx);
-}
+using namespace std;
 
 int main() {
-    InitWindow(800, 600, "PIXEL SURVIVOR");
+    InitWindow(1920, 1040, "PIXEL SURVIVOR");
+    SetTargetFPS(60);
     // gắn đồ họa
     Texture2D enemySprites[5];
     enemySprites[0] = LoadTexture("Graphics/Ultron-Perler-Bead-Pattern-removebg-preview.png");
     enemySprites[1] = LoadTexture("Graphics/Venom-removebg-preview.png");
     enemySprites[2] = LoadTexture("Graphics/Supreme-Leader-Ultron-removebg-preview.png");
     enemySprites[3] = LoadTexture("Graphics/Loki-removebg-preview.png");
-    enemySprites[4] = LoadTexture("Graphics/Thanos Perler Bead Pattern.png");
-
+    enemySprites[4] = LoadTexture("Graphics/Thanos Perler Bead Pattern.png")
     SetTargetFPS(60);
  
     Player player;
@@ -46,6 +44,8 @@ int main() {
     vector<Enemy*> enemies;
     vector<Bullet*> bullets;
     vector<Item*> items;
+    vector<WeaponProjectile> weaponProjectiles; // Weapon projectile system
+    float enemyFireTimer=0; // Track cooldown for ranged enemies
     float spawnTimer = 0.0f; // Track time for spawning enemies
     float hpSpawnTimer = 0.0f; // Track time for spawning HP items
     int currentDiffID  = -1 ;// trạng thái chờ chọn màn chơi
@@ -54,7 +54,7 @@ int main() {
     // Camera setup
     Camera2D camera = { 0 };
     camera.target = (Vector2){ player.getX(), player.getY() };
-    camera.offset = (Vector2){ 400, 300 }; // Center of screen
+    camera.offset = (Vector2){ 960, 520 }; // Center of screen
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
 
@@ -62,8 +62,39 @@ int main() {
     Skill* skill = new Skill(&player);
     entities.push_back(skill);
 
-    while (!WindowShouldClose()) { 
-        if (!gameStarted){
+    // Create weapons
+    Weapon hammer(0);     // Hammer
+    Weapon magicWand(1);  // Magic Wand
+    Weapon knife(2);      // Knife
+    Weapon spellBook(3);  // Spell Book
+    Weapon* currentWeapon = nullptr;
+    
+    // Create upgrade system
+    UpgradeSystem upgradeSystem;
+    
+    // Track which weapons are unlocked (level > 0 means unlocked)
+    // Weapons start at level 1 by default in the constructor
+    // We'll manage weapon unlocking through the upgrade system
+    hammer.setLevel(0);   // Start with no weapons unlocked
+    magicWand.setLevel(0);
+    knife.setLevel(0);
+    spellBook.setLevel(0);
+    
+    // Vector to track all weapons for the upgrade system
+    vector<Weapon*> allWeapons;
+    allWeapons.push_back(&hammer);
+    allWeapons.push_back(&magicWand);
+    allWeapons.push_back(&knife);
+    allWeapons.push_back(&spellBook);
+
+    vector<Weapon*> weaponInventory;
+    
+    // Track if we need to show upgrade menu
+    bool shouldShowUpgrade = true;
+    int previousLevel = 1;
+
+    while (!WindowShouldClose()) {
+      if (!gameStarted){
             // dùng phím chọn qua chế độ chơi nào
             if (IsKeyPressed(KEY_ONE))   { currentDiffID = 0; gameStarted = true; waveSystem.skipToWave(20);}
             if (IsKeyPressed(KEY_TWO))   { currentDiffID = 1; gameStarted = true; }
@@ -84,9 +115,68 @@ int main() {
 
         }
         hpSpawnTimer += GetFrameTime();
+        float dt = GetFrameTime();
+        
+        // Check if upgrade menu is active
+        if (upgradeSystem.isMenuActive()) {
+            upgradeSystem.update();
+            
+            // If menu just closed, apply the selected upgrade
+            if (!upgradeSystem.isMenuActive() && !upgradeSystem.isGamePaused()) {
+                UpgradeOption selected = upgradeSystem.getSelectedUpgrade();
+                if (selected.weaponType >= 0) {
+                    // Apply the upgrade
+                    if (selected.isNewWeapon) {
+                        // Find the weapon and unlock it
+                        if (selected.weaponType < (int)allWeapons.size() && (int)weaponInventory.size() < 2) {
+                            Weapon* newWeapon = allWeapons[selected.weaponType];
+                            newWeapon->setLevel(1);
+                            weaponInventory.push_back(newWeapon);
+                            if (currentWeapon == nullptr) currentWeapon = newWeapon;
+                        }
+                    } else if (selected.weaponPtr != nullptr) {
+                        selected.weaponPtr->setLevel(selected.weaponPtr->getLevel() + 1);
+                    }
+                }
+            }
+            
+            // Draw upgrade menu (it handles its own drawing)
+            BeginDrawing();
+            ClearBackground(BLACK);
+            
+            // Draw game behind the overlay
+            BeginMode2D(player.getCamera());
+            for (auto e : entities) e->draw();
+            drawProjectiles(weaponProjectiles);
+            EndMode2D();
+            
+            // Draw UI elements
+            DrawFPS(24, 18);
+            DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 24, 54, 36, WHITE);
+            DrawText(TextFormat("LV: %d", player.getLevel()), 24, 99, 36, YELLOW);
+            
+            upgradeSystem.draw();
+            
+            EndDrawing();
+            continue;  // Skip normal game update when menu is active
+        }
+        
+        // Check for level up (trigger upgrade menu)
+        if (player.getLevel() > previousLevel) {
+            shouldShowUpgrade = true;
+            previousLevel = player.getLevel();
+        }
+        
+        // Show upgrade menu if needed
+        if (shouldShowUpgrade) {
+            upgradeSystem.showUpgradeMenu(allWeapons, (int)weaponInventory.size(), 2);
+            shouldShowUpgrade = false;
+            continue;  // Skip this frame's game update
+        }
+        hpSpawnTimer += dt;
         if (hpSpawnTimer >= 10.0f) { // Spawn HP item every 10 seconds
-            float randomX = GetRandomValue(50, 750);
-            float randomY = GetRandomValue(50, 550);
+            float randomX = GetRandomValue(120, 1800);
+            float randomY = GetRandomValue(90, 950);
             Item* hpItem = new Item(randomX, randomY, 0, 1); // ID 1 for HP item
             items.push_back(hpItem);
             entities.push_back(hpItem);
@@ -97,12 +187,12 @@ int main() {
             ClearBackground(BLACK);
             // Format time as MM:SS
             int total = (int)waveSystem.getInternalTimer();
-            int mins = (int)(total / 60);
-            int secs = (int)(total % 60);
-            DrawText("GAME OVER", 280, 250, 40, RED);
-            DrawText(TextFormat("SCORE: %d", player.getScore()), 350, 320, 20, WHITE);
+            int mins = (int)(gameTimer / 60);
+            int secs = (int)(gameTimer) % 60;
+            DrawText("GAME OVER", 672, 430, 72, RED);
+            DrawText(TextFormat("SCORE: %d", player.getScore()), 840, 556, 36, WHITE);
             // Display survival time in MM:SS format
-            DrawText(TextFormat("TIME SURVIVED: %02d:%02d", mins, secs), 285, 360, 20, WHITE);
+            DrawText(TextFormat("TIME SURVIVED: %02d:%02d", mins, secs), 684, 628, 36, WHITE);
             EndDrawing();
             continue;
         }
@@ -124,14 +214,26 @@ int main() {
         }
         float dt = GetFrameTime();
         waveSystem.update(dt);
+        gameTimer += dt; // Update game timer
 
-        // Convert mouse position from screen coordinates to world coordinates
+        // Switch weapons with number keys
+        if (IsKeyPressed(KEY_ONE) && weaponInventory.size() > 0) currentWeapon = weaponInventory[0];
+        if (IsKeyPressed(KEY_TWO) && weaponInventory.size() > 1) currentWeapon = weaponInventory[1];
+
         Vector2 mouseScreenPos = GetMousePosition();
         Vector2 attackTarget = GetScreenToWorld2D(mouseScreenPos, player.getCamera());
+        bool isAttacking = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+
+        // Update weapons
+        if (currentWeapon != nullptr) {
+            currentWeapon->update(player, enemies, weaponProjectiles, attackTarget, isAttacking);
+        }
+        updateProjectiles(weaponProjectiles, enemies, dt);
         
         // Update
         for (auto e : entities) e->update();
-        // RANGED ENEMY LOGIC 
+        // RANGED ENEMY LOGIC (Type 3)
+            enemyFireTimer += dt;
         for (auto e : enemies) {
             if (e->getEnemyType() == 3 && e->canShoot()) { 
                 int bulletDmg = e->getDamage();
@@ -144,7 +246,7 @@ int main() {
 
         // Spawn enemies
         // Spawn logic: spawn an enemy at a random angle around the player, at a fixed radius
-        const float PIXEL_SPAWN_RADIUS = 400.0f;
+        const float PIXEL_SPAWN_RADIUS = 960.0f;
         if (!waveSystem.isFinished())
         spawnTimer += GetFrameTime();
         // Calculate Spawn Position
@@ -195,12 +297,6 @@ int main() {
             spawnTimer = 0.0f;
         }
 
-        // Shoot bullets
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            Bullet* b = new Bullet(player.getX(), player.getY(), attackTarget.x, attackTarget.y,20);
-            bullets.push_back(b);
-            entities.push_back(b);
-        }
 
         // Bullet-enemy collisions
         for (size_t i = 0; i < enemies.size(); i++) {
@@ -233,9 +329,21 @@ int main() {
                         enemies[i]->getX(), enemies[i]->getY()) < 15) {
                 enemies[i]->takeDamage(10);
                 if (enemies[i]->getHp() <= 0) {
-                    // Award score for killing enemy with skill
-                    player.addScore(5); 
-                    player.addExp(10);
+                    int scoreType = enemies[i]->getEnemyType();
+                    if (scoreType == 0) player.addScore(10); // NORMAL
+                    else if (scoreType == 1) player.addScore(15); // FAST
+                    else if (scoreType == 2) player.addScore(25); // TANK
+                    else if (scoreType == 3) player.addScore(20); // RANGED
+
+                    int val = 10; // NORMAL EXP
+                    int type = enemies[i]->getEnemyType();
+                    if (type == 1) val = 15; // FAST EXP
+                    if (type == 2) val = 25; // TANK EXP
+                    if (type == 3) val = 20; // RANGED EXP
+
+                    Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), val, 0);
+                    items.push_back(item);
+                    entities.push_back(item);
                     removeEnemy(entities, enemies, i);
                 }
             }
@@ -282,6 +390,28 @@ int main() {
             }
         }
 
+        // Check for dead enemies from weapon bullets
+        for (int i = (int)enemies.size() - 1; i >= 0; i--) {
+            if (enemies[i]->getHp() <= 0) {
+                // Award score based on enemy type
+                int scoreType = enemies[i]->getEnemyType();
+                if (scoreType == 0) player.addScore(10); // NORMAL
+                else if (scoreType == 1) player.addScore(15); // FAST
+                else if (scoreType == 2) player.addScore(25); // TANK
+                else if (scoreType == 3) player.addScore(20); // RANGED
+                // Spawn an item at the enemy's position with EXP value based on enemy type
+                int val = 10; // NORMAL EXP
+                int type = enemies[i]->getEnemyType();
+                if (type == 1) val = 15; // FAST EXP
+                if (type == 2) val = 25;// TANK EXP
+                if (type == 3) val = 20;  // RANGED EXP
+                Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), val, 0);
+                items.push_back(item);
+                entities.push_back(item);
+                removeEnemy(entities, enemies, i);
+            }
+        }
+
         // Draw
         BeginDrawing();
         ClearBackground(BLACK);
@@ -291,28 +421,32 @@ int main() {
         
         // Draw all game entities with camera applied
         for (auto e : entities) e->draw();
+        drawProjectiles(weaponProjectiles); // Draw weapon projectiles
         
         // End camera mode
         EndMode2D();
         
         // Draw UI elements (outside camera mode so they stay fixed on screen)
-        DrawFPS(10, 10);
-        DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 10, 30, 20, WHITE);
-        DrawText(TextFormat("LV: %d", player.getLevel()), 10, 55, 20, YELLOW);
+        DrawFPS(24, 18);
+        DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 24, 54, 36, WHITE);
+        DrawText(TextFormat("LV: %d", player.getLevel()), 24, 99, 36, YELLOW);
+        
+        // Draw current weapon name
+        DrawText(currentWeapon ? TextFormat("Weapon: %s (1-2 to switch)", currentWeapon->getName()) : "Weapon: None", 24, 189, 27, GREEN);
         
         // Draw EXP progress bar
-        int expBarWidth = 800;
-        int expBarHeight = 20;
+        int expBarWidth = 1920;
+        int expBarHeight = 36;
         int expBarX = 0;
-        int expBarY = 580;
+        int expBarY = 1004;
         float expProgress = (float)player.getExp() / player.getExpToNextLevel();
         DrawRectangle(expBarX, expBarY, expBarWidth, expBarHeight, DARKGREEN);
         DrawRectangle(expBarX, expBarY, (int)(expBarWidth * expProgress), expBarHeight, LIME);
         DrawRectangleLines(expBarX, expBarY, expBarWidth, expBarHeight, WHITE);
 
-        DrawText(TextFormat("EXP: %d/%d", player.getExp(), player.getExpToNextLevel()), 330, 580, 20, SKYBLUE);
+        DrawText(TextFormat("EXP: %d/%d", player.getExp(), player.getExpToNextLevel()), 792, 1004, 36, SKYBLUE);
         
-        DrawText(TextFormat("Score: %d", player.getScore()), 10, 80, 20, WHITE);
+        DrawText(TextFormat("Score: %d", player.getScore()), 24, 144, 36, WHITE);
         // Format time as MM:SS
         int total = (int)waveSystem.getInternalTimer();
         int mins = (int)(total / 60);
@@ -321,6 +455,25 @@ int main() {
         DrawText(TextFormat("Time: %02d:%02d", mins, secs), 330, 20, 25, WHITE);
         Color waveColor = (waveSystem.getCurrentWaveNumber() > 3.0 ) ? RED : WHITE;
         DrawText(TextFormat("Wave: %d", waveSystem.getCurrentWaveNumber()), 355, 50, 22, waveColor);
+        DrawText(TextFormat("Time: %02d:%02d", mins, secs), 792, 36, 45, WHITE);
+
+        Rectangle slot1 = {432, 860, 126, 126};
+        Rectangle slot2 = {648, 860, 126, 126};
+        DrawRectangleRec(slot1, DARKGRAY);
+        DrawRectangleRec(slot2, DARKGRAY);
+        DrawRectangleLinesEx(slot1, currentWeapon == (weaponInventory.size() > 0 ? weaponInventory[0] : nullptr) ? 5 : 4, WHITE);
+        DrawRectangleLinesEx(slot2, currentWeapon == (weaponInventory.size() > 1 ? weaponInventory[1] : nullptr) ? 5 : 4, WHITE);
+        DrawText("1", slot1.x + 11, slot1.y + 7, 29, LIGHTGRAY);
+        DrawText("2", slot2.x + 11, slot2.y + 7, 29, LIGHTGRAY);
+
+        if (weaponInventory.size() > 0) {
+            DrawText(TextFormat("Lv %d", weaponInventory[0]->getLevel()), slot1.x + 32, slot1.y - 32, 29, YELLOW);
+            DrawText(weaponInventory[0]->getName(), slot1.x + 19, slot1.y + 50, 22, WHITE);
+        }
+        if (weaponInventory.size() > 1) {
+            DrawText(TextFormat("Lv %d", weaponInventory[1]->getLevel()), slot2.x + 32, slot2.y - 32, 29, YELLOW);
+            DrawText(weaponInventory[1]->getName(), slot2.x + 19, slot2.y + 50, 22, WHITE);
+        }
         EndDrawing();
     }
     // giải phóng bộ nhớ 

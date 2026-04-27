@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "../core/Entity.h"
 #include "../player/Player.h"
 #include "raylib.h"
@@ -61,3 +62,5 @@ public:
     virtual ~Enemy() {}
     
 };
+
+void removeEnemy(std::vector<Entity*>& entities, std::vector<Enemy*>& enemies, int idx);
