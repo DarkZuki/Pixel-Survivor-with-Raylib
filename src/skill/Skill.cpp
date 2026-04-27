@@ -1,59 +1,58 @@
 #include "Skill.h"
 #include "SkillLevel.h"
 #include "raymath.h"
-#include <cmath>
 
-namespace {
-const int SKILL_PROJECTILE_LASER = 1;
-const int SKILL_PROJECTILE_THUNDER = 2;
-const int SKILL_PROJECTILE_SHIELD = 3;
-const int SKILL_PROJECTILE_HAMMER = 4;
+Vector2 getSkillEnemyPos(Enemy* enemy) {
+    return {(float)enemy->getX(), (float)enemy->getY()};
+}
 
-Enemy* findNearestEnemy(Vector2 center, const std::vector<Enemy*>& enemies, float maxRange = -1.0f) {
-    Enemy* nearest = nullptr;
-    float bestDistance = maxRange >= 0.0f ? maxRange : 999999.0f;
+Vector2 getSkillDir(Vector2 from, Vector2 to) {
+    Vector2 dir = Vector2Subtract(to, from);
+    if (dir.x == 0.0f && dir.y == 0.0f) return {1.0f, 0.0f};
+    return Vector2Normalize(dir);
+}
+
+Enemy* getNearestSkillEnemy(Vector2 center, const std::vector<Enemy*>& enemies) {
+    Enemy* target = nullptr;
+    float best = 999999.0f;
 
     for (Enemy* enemy : enemies) {
         if (!enemy) continue;
-        float distance = Vector2Distance(center, {enemy->getX(), enemy->getY()});
-        if (distance <= bestDistance) {
-            bestDistance = distance;
-            nearest = enemy;
+        float dist = Vector2Distance(center, getSkillEnemyPos(enemy));
+        if (dist <= best) {
+            best = dist;
+            target = enemy;
         }
     }
 
-    return nearest;
-}
-
-void drawOrbitSkill(Vector2 center, float orbitAngle, const SkillStats& stats, Texture2D texture, Color fallbackColor) {
-    for (int i = 0; i < stats.count; i++) {
-        float angle = orbitAngle + (2.0f * PI * i) / stats.count;
-        Vector2 pos = {center.x + cosf(angle) * stats.range, center.y + sinf(angle) * stats.range};
-
-        if (texture.id > 0) {
-            DrawTexturePro(
-                texture,
-                {0.0f, 0.0f, (float)texture.width, (float)texture.height},
-                {pos.x, pos.y, stats.effectRadius * 2.0f, stats.effectRadius * 2.0f},
-                {stats.effectRadius, stats.effectRadius},
-                angle * RAD2DEG,
-                WHITE
-            );
-        } else {
-            DrawCircleV(pos, stats.effectRadius, fallbackColor);
-        }
-    }
-}
+    return target;
 }
 
 Skill::Skill(Player* owner, int type) {
     player = owner;
     skillType = type;
     skillLevel = 1;
+    texture = {0};
     currentCooldownTimer = 0.0f;
     orbitAngle = 0.0f;
-    laserDirection = {1.0f, 0.0f};
     updateSkillStats();
+    loadTexture();
+}
+
+Skill::~Skill() {
+    if (texture.id > 0) UnloadTexture(texture);
+}
+
+void Skill::loadTexture() {
+    if (texture.id > 0) UnloadTexture(texture);
+    texture = {0};
+
+    switch (skillType) {
+        case 2: texture = LoadTexture("Graphics/thunderdungdung.png"); break;
+        case 3: texture = LoadTexture("Graphics/shuriken.png"); break;
+        case 4: texture = LoadTexture("Graphics/khiendoitruongmy.png"); break;
+        case 5: texture = LoadTexture("Graphics/buathor.png"); break;
+    }
 }
 
 const char* Skill::getName() const {
@@ -75,16 +74,14 @@ void Skill::updateSkillStats() {
 }
 
 void Skill::update(std::vector<Enemy*>& enemies) {
-    if (skillLevel <= 0 || player == nullptr) return;
+    if (skillLevel <= 0 || !player) return;
 
     float dt = GetFrameTime();
     currentCooldownTimer += dt;
     orbitAngle += dt * 2.5f;
 
-    if (skillType == SKILL_AUTO_BALLS || skillType == SKILL_SHURIKEN) {
-        attack(enemies);
-    } else if (currentCooldownTimer >= stats.cooldown) {
-        currentCooldownTimer = 0.0f;
+    if (skillType == 0 || skillType == 3 || currentCooldownTimer >= stats.cooldown) {
+        if (skillType != 0 && skillType != 3) currentCooldownTimer = 0.0f;
         attack(enemies);
     }
 
@@ -92,118 +89,92 @@ void Skill::update(std::vector<Enemy*>& enemies) {
 }
 
 void Skill::attack(const std::vector<Enemy*>& enemies) {
-    if (skillLevel <= 0 || player == nullptr) return;
+    if (skillLevel <= 0 || !player) return;
 
     Vector2 playerPos = {player->getX(), player->getY()};
     int totalDamage = stats.damage + player->getDamage();
 
     switch (skillType) {
-        case SKILL_AUTO_BALLS:
-        case SKILL_SHURIKEN:
+        case 0:
+        case 3:
             for (int i = 0; i < stats.count; i++) {
                 float angle = orbitAngle + (2.0f * PI * i) / stats.count;
                 Vector2 pos = {playerPos.x + cosf(angle) * stats.range, playerPos.y + sinf(angle) * stats.range};
                 for (Enemy* enemy : enemies) {
                     if (!enemy) continue;
-                    if (CheckCollisionCircles(pos, stats.effectRadius, {enemy->getX(), enemy->getY()}, 20.0f)) {
+                    if (CheckCollisionCircles(pos, stats.effectRadius, getSkillEnemyPos(enemy), 20.0f)) {
                         enemy->takeDamage(totalDamage);
                     }
                 }
             }
             break;
 
-        case SKILL_LASER_BEAM: {
-            Enemy* target = findNearestEnemy(playerPos, enemies);
-            if (!target) return;
+        case 1: {
+            Enemy* target = getNearestSkillEnemy(playerPos, enemies);
+            if (!target) break;
 
-            Vector2 targetDirection = Vector2Subtract({target->getX(), target->getY()}, playerPos);
-            laserDirection = (targetDirection.x == 0.0f && targetDirection.y == 0.0f)
-                ? Vector2{1.0f, 0.0f}
-                : Vector2Normalize(targetDirection);
-            Vector2 endPos = Vector2Add(playerPos, Vector2Scale(laserDirection, stats.range));
+            Vector2 dir = getSkillDir(playerPos, getSkillEnemyPos(target));
+            Vector2 end = Vector2Add(playerPos, Vector2Scale(dir, stats.range));
+
             for (Enemy* enemy : enemies) {
                 if (!enemy) continue;
-                if (CheckCollisionCircleLine({enemy->getX(), enemy->getY()}, 20.0f, playerPos, endPos)) {
-                    enemy->takeDamage(totalDamage);
-                }
+                Vector2 enemyPos = getSkillEnemyPos(enemy);
+                if (CheckCollisionCircleLine(enemyPos, 20.0f, playerPos, end)) enemy->takeDamage(totalDamage);
                 if (stats.special) {
-                    Vector2 reverseEndPos = Vector2Add(playerPos, Vector2Scale(laserDirection, -stats.range));
-                    if (CheckCollisionCircleLine({enemy->getX(), enemy->getY()}, 20.0f, playerPos, reverseEndPos)) {
-                        enemy->takeDamage(totalDamage);
-                    }
+                    Vector2 back = Vector2Add(playerPos, Vector2Scale(dir, -stats.range));
+                    if (CheckCollisionCircleLine(enemyPos, 20.0f, playerPos, back)) enemy->takeDamage(totalDamage);
                 }
             }
 
-            projectiles.push_back({playerPos, Vector2Scale(laserDirection, stats.range), 0.2f, stats.effectRadius, 0.0f, SKYBLUE, SKILL_PROJECTILE_LASER, 0.0f});
+            projectiles.push_back({playerPos, Vector2Scale(dir, stats.range), 0.2f, stats.effectRadius, 0.0f, SKYBLUE, 0, 0.0f});
             if (stats.special) {
-                projectiles.push_back({playerPos, Vector2Scale(laserDirection, -stats.range), 0.2f, stats.effectRadius, 0.0f, SKYBLUE, SKILL_PROJECTILE_LASER, 0.0f});
+                projectiles.push_back({playerPos, Vector2Scale(dir, -stats.range), 0.2f, stats.effectRadius, 0.0f, SKYBLUE, 0, 0.0f});
             }
             break;
         }
 
-        case SKILL_THUNDER_STRIKE: {
+        case 2: {
             std::vector<Enemy*> targets;
             for (Enemy* enemy : enemies) {
                 if (!enemy) continue;
-                if (Vector2Distance(playerPos, {enemy->getX(), enemy->getY()}) <= stats.range) {
-                    targets.push_back(enemy);
-                }
+                if (Vector2Distance(playerPos, getSkillEnemyPos(enemy)) <= stats.range) targets.push_back(enemy);
             }
-            if (targets.empty()) return;
 
             for (int i = 0; i < stats.count && !targets.empty(); i++) {
-                int randomIndex = GetRandomValue(0, (int)targets.size() - 1);
-                Enemy* target = targets[randomIndex];
-                if (target) {
-                    Vector2 targetPos = {target->getX(), target->getY()};
-                    target->takeDamage(totalDamage);
-                    projectiles.push_back({targetPos, {0.0f, 0.0f}, 0.25f, stats.effectRadius, 0.0f, YELLOW, SKILL_PROJECTILE_THUNDER, 0.0f});
-                }
-                targets.erase(targets.begin() + randomIndex);
+                int index = GetRandomValue(0, (int)targets.size() - 1);
+                Vector2 pos = getSkillEnemyPos(targets[index]);
+                targets[index]->takeDamage(totalDamage);
+                projectiles.push_back({pos, {0, 0}, 0.25f, stats.effectRadius, 0.0f, YELLOW, 1, 0.0f});
+                targets.erase(targets.begin() + index);
             }
             break;
         }
 
-        case SKILL_SHIELD:
-            for (int i = 0; i < stats.count; i++) {
-                float angle = (2.0f * PI * i) / stats.count;
-                Vector2 dir = {cosf(angle), sinf(angle)};
-                projectiles.push_back({
-                    playerPos,
-                    {dir.x * stats.speed, dir.y * stats.speed},
-                    1.2f,
-                    stats.effectRadius,
-                    (float)totalDamage,
-                    BLUE,
-                    SKILL_PROJECTILE_SHIELD,
-                    angle * RAD2DEG
-                });
+        case 4:
+        case 5: {
+            Vector2 dir = {1.0f, 0.0f};
+            if (skillType == 5) {
+                Enemy* target = getNearestSkillEnemy(playerPos, enemies);
+                if (!target) break;
+                dir = getSkillDir(playerPos, getSkillEnemyPos(target));
             }
-            break;
 
-        case SKILL_HAMMER: {
-            Enemy* target = findNearestEnemy(playerPos, enemies);
-            if (!target) return;
-
-            Vector2 baseDir = Vector2Subtract({target->getX(), target->getY()}, playerPos);
-            if (baseDir.x == 0.0f && baseDir.y == 0.0f) {
-                baseDir = {1.0f, 0.0f};
-            } else {
-                baseDir = Vector2Normalize(baseDir);
-            }
             for (int i = 0; i < stats.count; i++) {
                 float angleOffset = (float)(i - stats.count / 2) * 8.0f;
                 if (stats.count % 2 == 0) angleOffset += 4.0f;
-                Vector2 dir = Vector2Rotate(baseDir, angleOffset * DEG2RAD);
+                Vector2 velocity = skillType == 4
+                    ? Vector2Rotate(dir, (2.0f * PI * i) / stats.count)
+                    : Vector2Rotate(dir, angleOffset * DEG2RAD);
+
                 projectiles.push_back({
                     playerPos,
-                    {dir.x * stats.speed, dir.y * stats.speed},
-                    1.5f,
+                    {velocity.x * stats.speed, velocity.y * stats.speed},
+                    skillType == 4 ? 1.2f : 1.5f,
                     stats.effectRadius,
-                    (float)(totalDamage + (stats.special ? 20 : 0)),
-                    ORANGE,
-                    SKILL_PROJECTILE_HAMMER,
-                    0.0f
+                    (float)(totalDamage + (skillType == 5 && stats.special ? 20 : 0)),
+                    skillType == 4 ? BLUE : ORANGE,
+                    skillType == 4 ? 2 : 3,
+                    skillType == 4 ? (2.0f * PI * i) * RAD2DEG : 0.0f
                 });
             }
             break;
@@ -212,68 +183,73 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
 }
 
 void Skill::draw() const {
-    if (skillLevel <= 0 || player == nullptr) return;
-
-    static Texture2D shurikenTexture = LoadTexture("Graphics/shuriken.png");
-    static Texture2D thunderTexture = LoadTexture("Graphics/thunderdungdung.png");
-    static Texture2D shieldTexture = LoadTexture("Graphics/khiendoitruongmy.png");
-    static Texture2D hammerTexture = LoadTexture("Graphics/buathor.png");
+    if (skillLevel <= 0 || !player) return;
 
     Vector2 playerPos = {player->getX(), player->getY()};
 
-    if (skillType == SKILL_AUTO_BALLS) {
-        drawOrbitSkill(playerPos, orbitAngle, stats, Texture2D{}, BLUE);
-    } else if (skillType == SKILL_SHURIKEN) {
-        drawOrbitSkill(playerPos, orbitAngle, stats, shurikenTexture, SKYBLUE);
+    if (skillType == 0 || skillType == 3) {
+        for (int i = 0; i < stats.count; i++) {
+            float angle = orbitAngle + (2.0f * PI * i) / stats.count;
+            Vector2 pos = {playerPos.x + cosf(angle) * stats.range, playerPos.y + sinf(angle) * stats.range};
+
+            if (texture.id > 0) {
+                DrawTexturePro(
+                    texture,
+                    {0.0f, 0.0f, (float)texture.width, (float)texture.height},
+                    {pos.x, pos.y, stats.effectRadius * 2.0f, stats.effectRadius * 2.0f},
+                    {stats.effectRadius, stats.effectRadius},
+                    angle * RAD2DEG,
+                    WHITE
+                );
+            } else {
+                DrawCircleV(pos, stats.effectRadius, skillType == 0 ? BLUE : SKYBLUE);
+            }
+        }
     }
 
     for (const SkillProjectile& projectile : projectiles) {
-        if (projectile.type == SKILL_PROJECTILE_LASER) {
-            Vector2 endPos = Vector2Add(projectile.position, projectile.velocity);
-            DrawLineEx(projectile.position, endPos, projectile.radius, projectile.color);
-            DrawLineEx(projectile.position, endPos, projectile.radius / 3.0f, WHITE);
-        } else if (projectile.type == SKILL_PROJECTILE_THUNDER) {
-            if (thunderTexture.id > 0) {
-                DrawTexturePro(
-                    thunderTexture,
-                    {0.0f, 0.0f, (float)thunderTexture.width, (float)thunderTexture.height},
-                    {projectile.position.x, projectile.position.y - projectile.radius * 0.5f, projectile.radius * 0.45f, projectile.radius},
-                    {projectile.radius * 0.225f, projectile.radius * 0.5f},
-                    0.0f,
-                    WHITE
-                );
-            } else {
-                DrawLineEx({projectile.position.x, projectile.position.y - projectile.radius}, projectile.position, 6.0f, YELLOW);
-                DrawCircleV(projectile.position, 16.0f, ORANGE);
+        switch (projectile.type) {
+            case 0: {
+                Vector2 end = Vector2Add(projectile.position, projectile.velocity);
+                DrawLineEx(projectile.position, end, projectile.radius, projectile.color);
+                DrawLineEx(projectile.position, end, projectile.radius / 3.0f, WHITE);
+                break;
             }
-        } else if (projectile.type == SKILL_PROJECTILE_SHIELD) {
-            if (shieldTexture.id > 0) {
-                DrawTexturePro(
-                    shieldTexture,
-                    {0.0f, 0.0f, (float)shieldTexture.width, (float)shieldTexture.height},
-                    {projectile.position.x, projectile.position.y, projectile.radius * 2.0f, projectile.radius * 2.0f},
-                    {projectile.radius, projectile.radius},
-                    projectile.angle,
-                    WHITE
-                );
-            } else {
-                DrawCircleV(projectile.position, projectile.radius, BLUE);
-            }
-        } else if (projectile.type == SKILL_PROJECTILE_HAMMER) {
-            if (hammerTexture.id > 0) {
-                DrawTexturePro(
-                    hammerTexture,
-                    {0.0f, 0.0f, (float)hammerTexture.width, (float)hammerTexture.height},
-                    {projectile.position.x, projectile.position.y, projectile.radius * 3.0f, projectile.radius * 3.0f},
-                    {projectile.radius * 1.5f, projectile.radius * 1.5f},
-                    projectile.angle,
-                    WHITE
-                );
-            } else {
-                DrawCircleV(projectile.position, projectile.radius, ORANGE);
-            }
-        } else {
-            DrawCircleV(projectile.position, projectile.radius, projectile.color);
+            case 1:
+                if (texture.id > 0) {
+                    DrawTexturePro(
+                        texture,
+                        {0.0f, 0.0f, (float)texture.width, (float)texture.height},
+                        {projectile.position.x, projectile.position.y - projectile.radius * 0.5f, projectile.radius * 0.45f, projectile.radius},
+                        {projectile.radius * 0.225f, projectile.radius * 0.5f},
+                        0.0f,
+                        WHITE
+                    );
+                } else {
+                    DrawLineEx({projectile.position.x, projectile.position.y - projectile.radius}, projectile.position, 6.0f, YELLOW);
+                    DrawCircleV(projectile.position, 16.0f, ORANGE);
+                }
+                break;
+            case 2:
+            case 3:
+                if (texture.id > 0) {
+                    float size = projectile.type == 2 ? projectile.radius * 2.0f : projectile.radius * 3.0f;
+                    float origin = projectile.type == 2 ? projectile.radius : projectile.radius * 1.5f;
+                    DrawTexturePro(
+                        texture,
+                        {0.0f, 0.0f, (float)texture.width, (float)texture.height},
+                        {projectile.position.x, projectile.position.y, size, size},
+                        {origin, origin},
+                        projectile.angle,
+                        WHITE
+                    );
+                } else {
+                    DrawCircleV(projectile.position, projectile.radius, projectile.color);
+                }
+                break;
+            default:
+                DrawCircleV(projectile.position, projectile.radius, projectile.color);
+                break;
         }
     }
 }
@@ -290,7 +266,7 @@ void updateSkillProjectiles(std::vector<SkillProjectile>& projectiles, std::vect
         if (projectile.damage > 0.0f) {
             for (Enemy* enemy : enemies) {
                 if (!enemy) continue;
-                if (CheckCollisionCircles(projectile.position, projectile.radius, {enemy->getX(), enemy->getY()}, 10.0f)) {
+                if (CheckCollisionCircles(projectile.position, projectile.radius, getSkillEnemyPos(enemy), 10.0f)) {
                     enemy->takeDamage((int)projectile.damage);
                     projectile.lifeTime = 0.0f;
                     break;
@@ -298,9 +274,7 @@ void updateSkillProjectiles(std::vector<SkillProjectile>& projectiles, std::vect
             }
         }
 
-        if (projectile.lifeTime <= 0.0f) {
-            projectiles.erase(projectiles.begin() + i);
-        }
+        if (projectile.lifeTime <= 0.0f) projectiles.erase(projectiles.begin() + i);
     }
 }
 

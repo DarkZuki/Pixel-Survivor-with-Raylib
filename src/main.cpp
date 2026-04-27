@@ -30,6 +30,8 @@ int main() {
     enemySprites[2] = LoadTexture("Graphics/Supreme-Leader-Ultron-removebg-preview.png");
     enemySprites[3] = LoadTexture("Graphics/Loki-removebg-preview.png");
     enemySprites[4] = LoadTexture("Graphics/Thanos Perler Bead Pattern.png");
+    Texture2D floorTexture = LoadTexture("Graphics/Floor.png");
+    Texture2D wallsTexture = LoadTexture("Graphics/Walls.png");
  
     Player player;
     WaveManager waveSystem;
@@ -164,6 +166,8 @@ int main() {
             
             // Draw game behind the overlay
             BeginMode2D(player.getCamera());
+            DrawTexture(floorTexture, 0, 0, WHITE);
+            DrawTexture(wallsTexture, 0, 0, WHITE);
             for (auto e : entities) e->draw();
             for (auto s : skillInventory) s->draw();
             drawProjectiles(weaponProjectiles);
@@ -408,6 +412,8 @@ int main() {
         BeginDrawing();
         ClearBackground(BLACK);
         BeginMode2D(player.getCamera());
+        DrawTexture(floorTexture, 0, 0, WHITE);
+        DrawTexture(wallsTexture, 0, 0, WHITE);
         for (auto e : entities) e->draw();
         for (auto s : skillInventory) s->draw();
         drawProjectiles(weaponProjectiles); // Draw weapon projectiles
@@ -533,6 +539,8 @@ int main() {
     for (int i=0; i<5 ; i++){
         UnloadTexture(enemySprites[i]);
     }
+    UnloadTexture(floorTexture);
+    UnloadTexture(wallsTexture);
     CloseWindow();
     return 0;
 

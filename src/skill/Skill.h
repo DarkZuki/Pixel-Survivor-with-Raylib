@@ -40,15 +40,17 @@ private:
     int skillLevel;
     SkillStats stats;
     Player* player;
+    Texture2D texture;
     float currentCooldownTimer;
     float orbitAngle;
-    Vector2 laserDirection;
     std::vector<SkillProjectile> projectiles;
 
     void updateSkillStats();
+    void loadTexture();
 
 public:
     Skill(Player* owner, int type);
+    ~Skill();
 
     const char* getName() const;
     int getLevel() const;
