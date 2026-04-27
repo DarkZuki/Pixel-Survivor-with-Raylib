@@ -8,9 +8,9 @@ void UpgradeSystem::showUpgradeMenu(std::vector<Weapon*>& weapons, int weaponCou
     delay = 1.5;
     selected = {};
 
-    boxes[0] = {85, 160, 200, 250};
-    boxes[1] = {315, 160, 200, 250};
-    boxes[2] = {545, 160, 200, 250};
+    boxes[0] = {204, 268, 480, 450};
+    boxes[1] = {756, 268, 480, 450};
+    boxes[2] = {1308, 268, 480, 450};
 
     for (int i = 0; i < 3; i++) options[i] = {};
 
@@ -75,30 +75,36 @@ void UpgradeSystem::update() {
 void UpgradeSystem::draw() {
     if (!active) return;
 
-    DrawRectangle(0, 0, 800, 600, Fade(BLACK, 0.8f));
-    DrawText("CHOOSE UPGRADE", 250, 70, 30, GOLD);
+    static Texture2D cardFrame = LoadTexture("Graphics/Upgrade Card Frame.png");
+    Rectangle source = {0.0f, 0.0f, (float)cardFrame.width, (float)cardFrame.height};
+    Rectangle frameRects[3] = {
+        {10.0f, 268.0f, 700.0f, 500.0f},
+        {562.0f, 268.0f, 700.0f, 500.0f},
+        {1114.0f, 268.0f, 700.0f, 500.0f}
+    };
+
+    DrawRectangle(0, 0, 1920, 1040, Fade(BLACK, 0.8f));
+    DrawText("CHOOSE UPGRADE", 600, 106, 54, GOLD);
 
     for (int i = 0; i < 3; i++) {
 
         // Kiểm tra có loại vũ khí ko
         if (options[i].weaponType < 0) continue;
 
-        Color color = options[i].isNewWeapon ? Color{90, 70, 130, 255} : Color{70, 110, 70, 255};
-        DrawRectangleRec(boxes[i], color);
-        DrawRectangleLinesEx(boxes[i], 2, WHITE);
-        DrawText(getWeaponLevelWeaponName(options[i].weaponType), boxes[i].x + 25, boxes[i].y + 25, 22, WHITE);
-        DrawText(TextFormat("Level %d", options[i].upgradeLevel), boxes[i].x + 55, boxes[i].y + 85, 20, YELLOW);
+        DrawTexturePro(cardFrame, source, frameRects[i], {0.0f, 0.0f}, 0.0f, WHITE);
+        DrawText(getWeaponLevelWeaponName(options[i].weaponType), boxes[i].x + 60, boxes[i].y + 45, 40, WHITE);
+        DrawText(TextFormat("Level %d", options[i].upgradeLevel), boxes[i].x + 132, boxes[i].y + 153, 36, YELLOW);
         DrawText(options[i].isNewWeapon ? "Unlock weapon" : getWeaponLevelData(options[i].weaponType, options[i].upgradeLevel).name.c_str(),
-                 boxes[i].x + 15, boxes[i].y + 145, 16, WHITE);
+                 boxes[i].x + 36, boxes[i].y + 261, 29, WHITE);
 
         // Kiểm tra vũ khí mới 
-        if (options[i].isNewWeapon) DrawText("NEW", boxes[i].x + 75, boxes[i].y + 205, 20, GREEN);
+        if (options[i].isNewWeapon) DrawText("NEW", boxes[i].x + 180, boxes[i].y + 369, 36, GREEN);
     }
 
     DrawRectangleRec(skipBox, DARKGREEN);
-    DrawRectangleLinesEx(skipBox, 2, WHITE);
-    DrawText("SKIP", skipBox.x + 45, skipBox.y + 15, 20, WHITE);
+    DrawRectangleLinesEx(skipBox, 4, WHITE);
+    DrawText("SKIP", skipBox.x + 108, skipBox.y + 27, 36, WHITE);
 
     // Kiểm tra thời gian đợi khi mới vào menu cho mỗi lần giảm dần
-    if (delay > 0) DrawText("WAIT...", 360, 460, 20, LIGHTGRAY);
+    if (delay > 0) DrawText("WAIT...", 864, 788, 36, LIGHTGRAY);
 }

@@ -14,23 +14,8 @@
 
 using namespace std;
 
-float distance(float x1, float y1, float x2, float y2) {
-    float dx = x2 - x1, dy = y2 - y1;
-    return sqrt(dx*dx + dy*dy);
-}
-
-void removeEntity(vector<Entity*>& entities, Entity* entity) {
-    entities.erase(remove(entities.begin(), entities.end(), entity), entities.end());
-}
-
-void removeEnemy(vector<Entity*>& entities, vector<Enemy*>& enemies, int idx) {
-    removeEntity(entities, enemies[idx]);
-    delete enemies[idx];
-    enemies.erase(enemies.begin() + idx);
-}
-
 int main() {
-    InitWindow(800, 600, "PIXEL SURVIVOR");
+    InitWindow(1920, 1040, "PIXEL SURVIVOR");
     SetTargetFPS(60);
 
     Player player;
@@ -47,7 +32,7 @@ int main() {
     // Camera setup
     Camera2D camera = { 0 };
     camera.target = (Vector2){ player.getX(), player.getY() };
-    camera.offset = (Vector2){ 400, 300 }; // Center of screen
+    camera.offset = (Vector2){ 960, 520 }; // Center of screen
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
 
@@ -123,9 +108,9 @@ int main() {
             EndMode2D();
             
             // Draw UI elements
-            DrawFPS(10, 10);
-            DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 10, 30, 20, WHITE);
-            DrawText(TextFormat("LV: %d", player.getLevel()), 10, 55, 20, YELLOW);
+            DrawFPS(24, 18);
+            DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 24, 54, 36, WHITE);
+            DrawText(TextFormat("LV: %d", player.getLevel()), 24, 99, 36, YELLOW);
             
             upgradeSystem.draw();
             
@@ -147,8 +132,8 @@ int main() {
         }
         hpSpawnTimer += dt;
         if (hpSpawnTimer >= 10.0f) { // Spawn HP item every 10 seconds
-            float randomX = GetRandomValue(50, 750);
-            float randomY = GetRandomValue(50, 550);
+            float randomX = GetRandomValue(120, 1800);
+            float randomY = GetRandomValue(90, 950);
             Item* hpItem = new Item(randomX, randomY, 0, 1); // ID 1 for HP item
             items.push_back(hpItem);
             entities.push_back(hpItem);
@@ -160,10 +145,10 @@ int main() {
             // Format time as MM:SS
             int mins = (int)(gameTimer / 60);
             int secs = (int)(gameTimer) % 60;
-            DrawText("GAME OVER", 280, 250, 40, RED);
-            DrawText(TextFormat("SCORE: %d", player.getScore()), 350, 320, 20, WHITE);
+            DrawText("GAME OVER", 672, 430, 72, RED);
+            DrawText(TextFormat("SCORE: %d", player.getScore()), 840, 556, 36, WHITE);
             // Display survival time in MM:SS format
-            DrawText(TextFormat("TIME SURVIVED: %02d:%02d", mins, secs), 285, 360, 20, WHITE);
+            DrawText(TextFormat("TIME SURVIVED: %02d:%02d", mins, secs), 684, 628, 36, WHITE);
             EndDrawing();
             continue;
         }
@@ -214,7 +199,7 @@ int main() {
 
         // Spawn enemies
         // Spawn logic: Every second, spawn an enemy at a random angle around the player, at a fixed radius
-        const float FIXEL_SPAWN_RADIUS = 400.0f;
+        const float FIXEL_SPAWN_RADIUS = 960.0f;
         spawnTimer += dt;
         if (spawnTimer >= 1.0f) {
             float randomAngle = GetRandomValue(0, 360) * (PI / 180.0f);
@@ -382,48 +367,48 @@ int main() {
         EndMode2D();
         
         // Draw UI elements (outside camera mode so they stay fixed on screen)
-        DrawFPS(10, 10);
-        DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 10, 30, 20, WHITE);
-        DrawText(TextFormat("LV: %d", player.getLevel()), 10, 55, 20, YELLOW);
+        DrawFPS(24, 18);
+        DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 24, 54, 36, WHITE);
+        DrawText(TextFormat("LV: %d", player.getLevel()), 24, 99, 36, YELLOW);
         
         // Draw current weapon name
-        DrawText(currentWeapon ? TextFormat("Weapon: %s (1-2 to switch)", currentWeapon->getName()) : "Weapon: None", 10, 105, 15, GREEN);
+        DrawText(currentWeapon ? TextFormat("Weapon: %s (1-2 to switch)", currentWeapon->getName()) : "Weapon: None", 24, 189, 27, GREEN);
         
         // Draw EXP progress bar
-        int expBarWidth = 800;
-        int expBarHeight = 20;
+        int expBarWidth = 1920;
+        int expBarHeight = 36;
         int expBarX = 0;
-        int expBarY = 580;
+        int expBarY = 1004;
         float expProgress = (float)player.getExp() / player.getExpToNextLevel();
         DrawRectangle(expBarX, expBarY, expBarWidth, expBarHeight, DARKGREEN);
         DrawRectangle(expBarX, expBarY, (int)(expBarWidth * expProgress), expBarHeight, LIME);
         DrawRectangleLines(expBarX, expBarY, expBarWidth, expBarHeight, WHITE);
 
-        DrawText(TextFormat("EXP: %d/%d", player.getExp(), player.getExpToNextLevel()), 330, 580, 20, SKYBLUE);
+        DrawText(TextFormat("EXP: %d/%d", player.getExp(), player.getExpToNextLevel()), 792, 1004, 36, SKYBLUE);
         
-        DrawText(TextFormat("Score: %d", player.getScore()), 10, 80, 20, WHITE);
+        DrawText(TextFormat("Score: %d", player.getScore()), 24, 144, 36, WHITE);
         // Format time as MM:SS
         int mins = (int)(gameTimer / 60);
         int secs = (int)(gameTimer) % 60;
         // Display survival time in MM:SS format
-        DrawText(TextFormat("Time: %02d:%02d", mins, secs), 330, 20, 25, WHITE);
+        DrawText(TextFormat("Time: %02d:%02d", mins, secs), 792, 36, 45, WHITE);
 
-        Rectangle slot1 = {180, 500, 70, 70};
-        Rectangle slot2 = {270, 500, 70, 70};
+        Rectangle slot1 = {432, 860, 126, 126};
+        Rectangle slot2 = {648, 860, 126, 126};
         DrawRectangleRec(slot1, DARKGRAY);
         DrawRectangleRec(slot2, DARKGRAY);
-        DrawRectangleLinesEx(slot1, currentWeapon == (weaponInventory.size() > 0 ? weaponInventory[0] : nullptr) ? 3 : 2, WHITE);
-        DrawRectangleLinesEx(slot2, currentWeapon == (weaponInventory.size() > 1 ? weaponInventory[1] : nullptr) ? 3 : 2, WHITE);
-        DrawText("1", slot1.x + 6, slot1.y + 4, 16, LIGHTGRAY);
-        DrawText("2", slot2.x + 6, slot2.y + 4, 16, LIGHTGRAY);
+        DrawRectangleLinesEx(slot1, currentWeapon == (weaponInventory.size() > 0 ? weaponInventory[0] : nullptr) ? 5 : 4, WHITE);
+        DrawRectangleLinesEx(slot2, currentWeapon == (weaponInventory.size() > 1 ? weaponInventory[1] : nullptr) ? 5 : 4, WHITE);
+        DrawText("1", slot1.x + 11, slot1.y + 7, 29, LIGHTGRAY);
+        DrawText("2", slot2.x + 11, slot2.y + 7, 29, LIGHTGRAY);
 
         if (weaponInventory.size() > 0) {
-            DrawText(TextFormat("Lv %d", weaponInventory[0]->getLevel()), slot1.x + 18, slot1.y - 18, 16, YELLOW);
-            DrawText(weaponInventory[0]->getName(), slot1.x + 8, slot1.y + 28, 12, WHITE);
+            DrawText(TextFormat("Lv %d", weaponInventory[0]->getLevel()), slot1.x + 32, slot1.y - 32, 29, YELLOW);
+            DrawText(weaponInventory[0]->getName(), slot1.x + 19, slot1.y + 50, 22, WHITE);
         }
         if (weaponInventory.size() > 1) {
-            DrawText(TextFormat("Lv %d", weaponInventory[1]->getLevel()), slot2.x + 18, slot2.y - 18, 16, YELLOW);
-            DrawText(weaponInventory[1]->getName(), slot2.x + 8, slot2.y + 28, 12, WHITE);
+            DrawText(TextFormat("Lv %d", weaponInventory[1]->getLevel()), slot2.x + 32, slot2.y - 32, 29, YELLOW);
+            DrawText(weaponInventory[1]->getName(), slot2.x + 19, slot2.y + 50, 22, WHITE);
         }
         EndDrawing();
     }

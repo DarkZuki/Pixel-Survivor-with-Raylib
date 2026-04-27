@@ -2,8 +2,8 @@
 #include <cmath>
 
 Enemy::Enemy(Player* p, int type) : player(p), enemyType(type) {
-    x = GetRandomValue(100, 700);
-    y = GetRandomValue(100, 500);
+    x = GetRandomValue(240, 1680);
+    y = GetRandomValue(180, 900);
     // Set hp and speed based on enemy type
     if (type == 0) { // NORMAL
         hp = 30;
@@ -38,6 +38,12 @@ void Enemy::draw() {
     if (enemyType == 1) enemyColor = ORANGE;
     else if (enemyType == 2) enemyColor = BROWN;
     else if (enemyType == 3) enemyColor = GREEN;
-    DrawCircle(x, y, 8, enemyColor);
-    DrawText(TextFormat("HP: %d", hp), x - 15, y - 20, 8, WHITE);
+    DrawCircle(x, y, 14, enemyColor);
+    DrawText(TextFormat("HP: %d", hp), x - 27, y - 36, 14, WHITE);
+}
+
+void removeEnemy(std::vector<Entity*>& entities, std::vector<Enemy*>& enemies, int idx) {
+    removeEntity(entities, enemies[idx]);
+    delete enemies[idx];
+    enemies.erase(enemies.begin() + idx);
 }

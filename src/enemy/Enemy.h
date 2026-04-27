@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 #include "../core/Entity.h"
 #include "../player/Player.h"
 #include "raylib.h"
@@ -32,3 +33,5 @@ public:
     void takeDamage(int damage) { hp -= damage; }
     
 };
+
+void removeEnemy(std::vector<Entity*>& entities, std::vector<Enemy*>& enemies, int idx);
