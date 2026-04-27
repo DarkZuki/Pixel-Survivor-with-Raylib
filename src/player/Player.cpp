@@ -1,5 +1,6 @@
 #include "Player.h"
 #include "raylib.h"
+#include "raymath.h"
 #include <cmath>
 #include "../core/CollisionMap.h"
 
@@ -86,8 +87,14 @@ void Player::update() {
         // If neither direction works, don't move (blocked by obstacle)
     }
     
-    // Update camera to follow player
+    // Clamp camera so it never shows space outside the map.
     camera.target = (Vector2){ x, y };
+    if (gCollisionMap.isLoaded()) {
+        float halfViewWidth = camera.offset.x / camera.zoom;
+        float halfViewHeight = camera.offset.y / camera.zoom;
+        camera.target.x = Clamp(x, halfViewWidth, gCollisionMap.getWidth() - halfViewWidth);
+        camera.target.y = Clamp(y, halfViewHeight, gCollisionMap.getHeight() - halfViewHeight);
+    }
     
     // Update facing direction
     if (moveDir.x != 0 || moveDir.y != 0) {
