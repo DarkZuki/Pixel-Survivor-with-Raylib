@@ -68,7 +68,7 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
                     else dir = Vector2Normalize(dir);
 
                     projectiles.push_back({playerPos, {dir.x * stats.speed, dir.y * stats.speed},
-                                           2.0f, 6.0f, (float)totalDamage, PURPLE, 0, 0});
+                                           2.0f, 10.0f, (float)totalDamage, PURPLE, 0, 0});
                     shotsFired++;
                 }
             }
@@ -85,7 +85,7 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
                 if (stats.count % 2 == 0) angleOffset += 4.0f;
                 Vector2 velocity = Vector2Rotate(dir, angleOffset * DEG2RAD);
                 projectiles.push_back({playerPos, {velocity.x * stats.speed, velocity.y * stats.speed},
-                                       1.0f, 4.0f, (float)totalDamage, SKYBLUE, 0, 0});
+                                       1.0f, 8.0f, (float)totalDamage, SKYBLUE, 4, 0});
             }
             break;
         }
@@ -100,7 +100,7 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
                 if (stats.count % 2 == 0) angleOffset += 5.0f;
                 Vector2 velocity = Vector2Rotate(dir, angleOffset * DEG2RAD);
                 projectiles.push_back({playerPos, {velocity.x * stats.speed, velocity.y * stats.speed},
-                                       2.0f, 8.0f, (float)totalDamage, PURPLE, 2, stats.explosionRadius});
+                                       2.0f, 10.0f, (float)totalDamage, PURPLE, 2, stats.explosionRadius});
             }
             break;
         }
@@ -150,14 +150,36 @@ void updateProjectiles(std::vector<WeaponProjectile>& projectiles, std::vector<E
 }
 
 void drawProjectiles(const std::vector<WeaponProjectile>& projectiles) {
+    static Texture2D hammerTexture = LoadTexture("Graphics/Hammer.png");
+    static Texture2D magicTexture = LoadTexture("Graphics/Magic.png");
+    static Texture2D knifeTexture = LoadTexture("Graphics/Knife.png");
+    static Texture2D fireTexture = LoadTexture("Graphics/fire.png");
+    static Texture2D explosionTexture = LoadTexture("Graphics/explosion.png");
+
     for (const WeaponProjectile& projectile : projectiles) {
         if (projectile.type == 1) {
-            DrawCircleV(projectile.position, projectile.radius, Fade(ORANGE, projectile.lifeTime * 5));
-            DrawCircleLinesV(projectile.position, projectile.radius, Fade(YELLOW, projectile.lifeTime * 5));
-        } else if (projectile.type == 2 && projectile.damage == 0) {
-            DrawCircleV(projectile.position, projectile.angle, Fade(ORANGE, projectile.lifeTime * 3));
+            Rectangle source = {0.0f, 0.0f, (float)hammerTexture.width, (float)hammerTexture.height};
+            Rectangle dest = {projectile.position.x, projectile.position.y, projectile.radius * 2.0f, projectile.radius * 2.0f};
+            DrawTexturePro(hammerTexture, source, dest, {projectile.radius, projectile.radius}, 0.0f, WHITE);
+        } else if (projectile.type == 2) {
+            Rectangle source = {0.0f, 0.0f, (float)fireTexture.width, (float)fireTexture.height};
+            Rectangle dest = {projectile.position.x, projectile.position.y, projectile.radius * 4.0f, projectile.radius * 4.0f};
+            float rotation = atan2f(projectile.velocity.y, projectile.velocity.x) * RAD2DEG + 90.0f;
+            DrawTexturePro(fireTexture, source, dest, {projectile.radius * 2.0f, projectile.radius * 2.0f}, rotation, WHITE);
+        } else if (projectile.type == 3) {
+            Rectangle source = {0.0f, 0.0f, (float)explosionTexture.width, (float)explosionTexture.height};
+            Rectangle dest = {projectile.position.x, projectile.position.y, projectile.angle * 2.0f, projectile.angle * 2.0f};
+            DrawTexturePro(explosionTexture, source, dest, {projectile.angle, projectile.angle}, 0.0f, WHITE);
+        } else if (projectile.type == 4) {
+            Rectangle source = {0.0f, 0.0f, (float)knifeTexture.width, (float)knifeTexture.height};
+            Rectangle dest = {projectile.position.x, projectile.position.y, projectile.radius * 4.0f, projectile.radius * 4.0f};
+            float rotation = atan2f(projectile.velocity.y, projectile.velocity.x) * RAD2DEG + 90.0f;
+            DrawTexturePro(knifeTexture, source, dest, {projectile.radius * 2.0f, projectile.radius * 2.0f}, rotation, WHITE);
         } else {
-            DrawCircleV(projectile.position, projectile.radius, projectile.color);
+            Rectangle source = {0.0f, 0.0f, (float)magicTexture.width, (float)magicTexture.height};
+            Rectangle dest = {projectile.position.x, projectile.position.y, projectile.radius * 4.0f, projectile.radius * 4.0f};
+            float rotation = atan2f(projectile.velocity.y, projectile.velocity.x) * RAD2DEG + 90.0f;
+            DrawTexturePro(magicTexture, source, dest, {projectile.radius * 2.0f, projectile.radius * 2.0f}, rotation, WHITE);
         }
     }
 }

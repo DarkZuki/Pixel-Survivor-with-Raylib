@@ -37,11 +37,23 @@ int getDifficultyChoice() {
 void drawDifficultyScreen() {
     BeginDrawing();
     ClearBackground(BLACK);
-    DrawText("Select Difficulty Level:", 585, 250, 52, GRAY);
-    DrawText("[1] EASY - Low Density / Weak Enemies", 435, 390, 46, GREEN);
-    DrawText("[2] HARD - Standard Operations", 535, 485, 46, ORANGE);
-    DrawText("[3] HELL - High Density / Elite Enemies", 425, 580, 46, RED);
-    DrawText("Press key to deploy...", 735, 735, 34, DARKGRAY);
+    DrawText("Select Difficulty Level:", 655, 250, 52, GRAY);
+    DrawText("[1] EASY - Low Density / Weak Enemies", 520, 390, 46, GREEN);
+    DrawText("[2] HARD - Normal Density / Medium Enemies", 520, 485, 46, ORANGE);
+    DrawText("[3] HELL - High Density / Elite Enemies", 520, 580, 46, RED);
+    DrawText("Press number key to choose difficulty.", 625, 735, 34, DARKGRAY);
+    EndDrawing();
+}
+
+void drawTitleScreen(Texture2D mainScreen) {
+    BeginDrawing();
+    ClearBackground(BLACK);
+    DrawTexture(mainScreen, 0, 0, WHITE);
+    if (((int)(GetTime() * 2.0)) % 2 == 0) {
+        DrawText("PRESS SPACE TO PLAY", 660, 940, 40, WHITE);
+    } else {
+        
+    }
     EndDrawing();
 }
 
@@ -107,9 +119,9 @@ bool drawGameOver(Player& player, float gameTimer) {
     int mins = (int)(gameTimer / 60), secs = (int)gameTimer % 60;
     BeginDrawing();
     ClearBackground(BLACK);
-    DrawText("GAME OVER", 672, 430, 72, RED);
-    DrawText(TextFormat("SCORE: %d", player.getScore()), 840, 556, 36, WHITE);
-    DrawText(TextFormat("TIME SURVIVED: %02d:%02d", mins, secs), 684, 628, 36, WHITE);
+    DrawText("GAME OVER", 722, 430, 72, RED);
+    DrawText(TextFormat("SCORE: %d", player.getScore()), 850, 556, 36, WHITE);
+    DrawText(TextFormat("TIME SURVIVED: %02d:%02d", mins, secs), 734, 628, 36, WHITE);
     EndDrawing();
     return true;
 }
@@ -169,7 +181,8 @@ void spawnEnemyWave(WaveManager& waveSystem, Player& player, Texture2D enemySpri
 }
 
 int main() {
-    InitWindow(1920, 1040, "PIXEL SURVIVOR");
+    InitWindow(1920, 1040, "Arcane Rampage");
+    SetExitKey(KEY_NULL);
     SetTargetFPS(60);
     InitCollisionMap("Graphics/gameBgCollision.png");
 
@@ -177,6 +190,7 @@ int main() {
     loadEnemySprites(enemySprites);
     Texture2D floorTexture = LoadTexture("Graphics/Floor.png");
     Texture2D wallsTexture = LoadTexture("Graphics/Walls.png");
+    Texture2D mainScreenTexture = LoadTexture("Graphics/Main screen.png");
 
     Player player;
     WaveManager waveSystem;
@@ -193,13 +207,14 @@ int main() {
     float gameTimer = 0.0f;
     int currentDiffID = -1;
     bool gameStarted = false;
+    bool showTitleScreen = true;
 
     vector<Skill*> allSkills = {
         new Skill(&player, SKILL_LASER_BEAM),
-        new Skill(&player, SKILL_HAMMER),
-        new Skill(&player, SKILL_SHIELD),
+        new Skill(&player, SKILL_THUNDER_STRIKE),
         new Skill(&player, SKILL_SHURIKEN),
-        new Skill(&player, SKILL_THUNDER_STRIKE)
+        new Skill(&player, SKILL_SHIELD),
+        new Skill(&player, SKILL_HAMMER)
     };
     vector<Skill*> skillInventory;
     for (auto s : allSkills) s->setLevel(0);
@@ -218,6 +233,12 @@ int main() {
     int previousLevel = 1;
 
     while (!WindowShouldClose()) {
+        if (showTitleScreen) {
+            if (IsKeyPressed(KEY_SPACE)) showTitleScreen = false;
+            drawTitleScreen(mainScreenTexture);
+            continue;
+        }
+
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), pauseButton)) isPaused = !isPaused;
         if (IsKeyPressed(KEY_ESCAPE)) isPaused = !isPaused;
 
@@ -248,7 +269,10 @@ int main() {
                 spawnHpItem(items, entities);
                 hpSpawnTimer = 0.0f;
             }
-            if (drawGameOver(player, gameTimer)) continue;
+            if (drawGameOver(player, gameTimer)) {
+                if (IsKeyPressed(KEY_ESCAPE)) break;
+                continue;
+            }
             if (drawVictory(waveSystem, enemies, player)) {
                 if (IsKeyPressed(KEY_ESCAPE)) break;
                 continue;
@@ -288,7 +312,7 @@ int main() {
             for (auto s : skillInventory) s->update(enemies);
 
             for (auto enemy : enemies) {
-                if (distance(player.getX(), player.getY(), enemy->getX(), enemy->getY()) < 20) player.takeDamage(enemy->getDamage());
+                if (distance(player.getX(), player.getY(), enemy->getX(), enemy->getY()) < 30) player.takeDamage(enemy->getDamage());
             }
 
             for (size_t j = 0; j < bullets.size(); j++) {
@@ -301,7 +325,15 @@ int main() {
             }
 
             for (size_t k = 0; k < items.size(); k++) {
-                if (distance(player.getX(), player.getY(), items[k]->getX(), items[k]->getY()) < 20) {
+                if (items[k]->isExpired()) {
+                    removeEntity(entities, items[k]);
+                    delete items[k];
+                    items.erase(items.begin() + k);
+                    k--;
+                    continue;
+                }
+
+                if (distance(player.getX(), player.getY(), items[k]->getX(), items[k]->getY()) < 30) {
                     if (items[k]->getID() == 1) player.setHp(player.getHp() + 10);
                     else {
                         int oldLevel = player.getLevel();
@@ -371,38 +403,9 @@ int main() {
         DrawText(TextFormat("EXP: %d/%d", player.getExp(), player.getExpToNextLevel()), 792, 1004, 36, SKYBLUE);
       
         DrawRectangleRec(pauseButton, DARKGRAY);
-        DrawText("||", pauseButton.x, pauseButton.y , 30, WHITE);
+        DrawText("||", pauseButton.x + 20, pauseButton.y + 12, 30, WHITE);
 
-        // Náº¾U ÄANG PAUSE THĂŒ Váº¼ Báº¢NG MENU
-        if (isPaused) {
-            // Váº½ lá»›p ná»n má» Ä‘Ă¨ lĂªn game
-            DrawRectangle(0, 0, 1920, 1040, Fade(BLACK, 0.6f));
-
-            // Váº½ cĂ¡i báº£ng Menu á»Ÿ giá»¯a
-            DrawRectangle(660, 250, 600, 420, RAYWHITE);
-            DrawText("GAME PAUSED", 765, 310, 54, BLACK);
-
-            // NĂºt RESUME
-            Rectangle resumeBtn = { 760, 410, 400, 80 };
-            DrawRectangleRec(resumeBtn, LIGHTGRAY);
-            DrawText("RESUME", 870, 432, 36, BLACK);
-
-            // NĂºt EXIT
-            Rectangle exitBtn = { 760, 530, 400, 80 };
-            DrawRectangleRec(exitBtn, RED);
-            DrawText("EXIT", 915, 552, 36, WHITE);
-
-            // Check click vĂ o cĂ¡c nĂºt trong Menu
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                Vector2 mousePos = GetMousePosition();
-                if (CheckCollisionPointRec(mousePos, resumeBtn)) {
-                    isPaused = false; // Cháº¡y tiáº¿p
-                }
-                if (CheckCollisionPointRec(mousePos, exitBtn)) {
-                    break; // ThoĂ¡t vĂ²ng láº·p main -> Out game
-                }
-            }
-        }
+       
 
         DrawText(TextFormat("Score: %d", player.getScore()), 24, 144, 36, WHITE);
         // Format time as MM:SS
@@ -411,7 +414,7 @@ int main() {
         int waveSecs = (int)(total % 60);
         // Display survival time in MM:SS format
         Color waveColor = (waveSystem.getCurrentWaveNumber() > 3.0 ) ? RED : WHITE;
-        DrawText(TextFormat("Wave: %d", waveSystem.getCurrentWaveNumber()), 792, 96, 40, waveColor);
+        DrawText(TextFormat("Wave: %d", waveSystem.getCurrentWaveNumber()), 850, 96, 40, waveColor);
         DrawText(TextFormat("Time: %02d:%02d", waveMins, waveSecs), 792, 36, 45, WHITE);
 
         Rectangle slot1 = {432, 860, 126, 126};
@@ -455,12 +458,44 @@ int main() {
             DrawText(TextFormat("Lv %d", skillInventory[2]->getLevel()), skillSlot3.x + 32, skillSlot3.y - 32, 29, YELLOW);
             DrawText(skillInventory[2]->getName(), skillSlot3.x + 8, skillSlot3.y + 50, 18, WHITE);
         }
+
+         // Náº¾U ÄANG PAUSE THĂŒ Váº¼ Báº¢NG MENU
+        if (isPaused) {
+            // Váº½ lá»›p ná»n má» Ä‘Ă¨ lĂªn game
+            DrawRectangle(0, 0, 1920, 1040, Fade(BLACK, 0.6f));
+
+            // Váº½ cĂ¡i báº£ng Menu á»Ÿ giá»¯a
+            DrawRectangle(660, 250, 600, 420, RAYWHITE);
+            DrawText("GAME PAUSED", 765, 310, 54, BLACK);
+
+            // NĂºt RESUME
+            Rectangle resumeBtn = { 760, 410, 400, 80 };
+            DrawRectangleRec(resumeBtn, LIGHTGRAY);
+            DrawText("RESUME", 870, 432, 36, BLACK);
+
+            // NĂºt EXIT
+            Rectangle exitBtn = { 760, 530, 400, 80 };
+            DrawRectangleRec(exitBtn, RED);
+            DrawText("EXIT", 915, 552, 36, WHITE);
+
+            // Check click vĂ o cĂ¡c nĂºt trong Menu
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                Vector2 mousePos = GetMousePosition();
+                if (CheckCollisionPointRec(mousePos, resumeBtn)) {
+                    isPaused = false; // Cháº¡y tiáº¿p
+                }
+                if (CheckCollisionPointRec(mousePos, exitBtn)) {
+                    break; // ThoĂ¡t vĂ²ng láº·p main -> Out game
+                }
+            }
+        }
         EndDrawing();
     }
     // giáº£i phĂ³ng bá»™ nhá»› 
     for (int i=0; i<5 ; i++){
         UnloadTexture(enemySprites[i]);
     }
+    UnloadTexture(mainScreenTexture);
     UnloadTexture(floorTexture);
     UnloadTexture(wallsTexture);
     CloseWindow();

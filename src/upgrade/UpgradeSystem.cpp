@@ -10,52 +10,63 @@ void UpgradeSystem::showUpgradeMenu(std::vector<Weapon*>& weapons, std::vector<S
     delay = 1.5f;
     selected = {};
 
-    boxes[0] = {204, 268, 480, 450};
-    boxes[1] = {656, 268, 480, 450};
-    boxes[2] = {1108, 268, 480, 450};
+    boxes[0] = {204, 300, 480, 450};
+    boxes[1] = {656, 300, 480, 450};
+    boxes[2] = {1108, 300, 480, 450};
 
     for (int i = 0; i < 3; i++) options[i] = {};
 
-    int k = 0;
+    std::vector<UpgradeOption> candidates;
 
     if (weaponCount < maxWeapons) {
-        for (int i = 0; i < (int)weapons.size() && k < 3; i++) {
+        for (int i = 0; i < (int)weapons.size(); i++) {
             if (weapons[i] != nullptr && weapons[i]->getLevel() <= 0) {
-                options[k].weaponType = i;
-                options[k].isNewWeapon = true;
-                k++;
+                UpgradeOption option;
+                option.weaponType = i;
+                option.isNewWeapon = true;
+                candidates.push_back(option);
             }
         }
     }
 
     if (skillCount < maxSkills) {
-        for (int i = 0; i < (int)skills.size() && k < 3; i++) {
+        for (int i = 0; i < (int)skills.size(); i++) {
             if (skills[i] != nullptr && skills[i]->getLevel() <= 0) {
-                options[k].isSkill = true;
-                options[k].skillType = i;
-                options[k].isNewSkill = true;
-                k++;
+                UpgradeOption option;
+                option.isSkill = true;
+                option.skillType = i;
+                option.isNewSkill = true;
+                candidates.push_back(option);
             }
         }
     }
 
-    for (int i = 0; i < (int)weapons.size() && k < 3; i++) {
+    for (int i = 0; i < (int)weapons.size(); i++) {
         if (weapons[i] != nullptr && weapons[i]->getLevel() > 0 && weapons[i]->getLevel() < 10) {
-            options[k].weaponType = i;
-            options[k].upgradeLevel = weapons[i]->getLevel() + 1;
-            options[k].weaponPtr = weapons[i];
-            k++;
+            UpgradeOption option;
+            option.weaponType = i;
+            option.upgradeLevel = weapons[i]->getLevel() + 1;
+            option.weaponPtr = weapons[i];
+            candidates.push_back(option);
         }
     }
 
-    for (int i = 0; i < (int)skills.size() && k < 3; i++) {
+    for (int i = 0; i < (int)skills.size(); i++) {
         if (skills[i] != nullptr && skills[i]->getLevel() > 0 && skills[i]->getLevel() < 10) {
-            options[k].isSkill = true;
-            options[k].skillType = i;
-            options[k].upgradeLevel = skills[i]->getLevel() + 1;
-            options[k].skillPtr = skills[i];
-            k++;
+            UpgradeOption option;
+            option.isSkill = true;
+            option.skillType = i;
+            option.upgradeLevel = skills[i]->getLevel() + 1;
+            option.skillPtr = skills[i];
+            candidates.push_back(option);
         }
+    }
+
+    for (int i = 0; i < 3 && !candidates.empty(); i++) {
+        int randomIndex = GetRandomValue(0, (int)candidates.size() - 1);
+        options[i] = candidates[randomIndex];
+        candidates[randomIndex] = candidates.back();
+        candidates.pop_back();
     }
 
     if (options[0].weaponType < 0 && options[0].skillType < 0 && !weapons.empty()) {
@@ -92,6 +103,7 @@ void UpgradeSystem::update() {
 
 void UpgradeSystem::draw() {
     if (!active) return;
+    const int upgradeTitleXOffset = 202;
     static Texture2D cardFrame = LoadTexture("Graphics/Upgrade Card Frame.png");
     Rectangle source = {0.0f, 0.0f, (float)cardFrame.width, (float)cardFrame.height};
     Rectangle frameRects[3] = {
@@ -103,7 +115,7 @@ void UpgradeSystem::draw() {
     DrawRectangle(0, 0, 1920, 1040, Fade(BLACK, 0.8f));
     Texture2D upgradeFrame= LoadTexture("Graphics/Upgrade Frame.png");
     DrawTexture(upgradeFrame, 85, -30, WHITE);
-    DrawText("CHOOSE UPGRADE", 700, 280, 54, GOLD);
+    DrawText("CHOOSE UPGRADE", 700, 260, 54, GOLD);
     for (int i = 0; i < 3; i++) {
         if (options[i].weaponType < 0 && options[i].skillType < 0) continue;
 
@@ -111,8 +123,8 @@ void UpgradeSystem::draw() {
 
         const char* title = options[i].isSkill ? getSkillLevelSkillName(options[i].skillType)
                                                : getWeaponLevelWeaponName(options[i].weaponType);
-        DrawText(title, boxes[i].x + 202, boxes[i].y + 96, 40, WHITE);
-        DrawText(TextFormat("Level %d", options[i].upgradeLevel), boxes[i].x + 266, boxes[i].y + 198, 36, YELLOW);
+        DrawText(title, boxes[i].x + upgradeTitleXOffset, boxes[i].y + 96, 40, WHITE);
+        DrawText(TextFormat("Level %d", options[i].upgradeLevel), boxes[i].x + 245, boxes[i].y + 198, 36, YELLOW);
 
         std::string upgradeName;
         if (options[i].isSkill) {
@@ -122,16 +134,16 @@ void UpgradeSystem::draw() {
             upgradeName = options[i].isNewWeapon ? "Unlock weapon"
                                                  : getWeaponLevelData(options[i].weaponType, options[i].upgradeLevel).name;
         }
-        DrawText(upgradeName.c_str(), boxes[i].x + 178, boxes[i].y + 294, 29, WHITE);
+        DrawText(upgradeName.c_str(), boxes[i].x + 205, boxes[i].y + 294, 29, WHITE);
 
         if (options[i].isNewWeapon || options[i].isNewSkill) {
-            DrawText("NEW", boxes[i].x + 282, boxes[i].y + 392, 36, GREEN);
+            DrawText("NEW", boxes[i].x + 260, boxes[i].y + 392, 36, GREEN);
         }
     }
 
     if (delay > 0){
-        DrawText("WAIT...", 908, 830, 36, LIGHTGRAY);
+        DrawText("WAIT...", 908, 820, 36, LIGHTGRAY);
     }else{
-        DrawText("SKIP", skipBox.x + 128, skipBox.y + -40, 36, RED);
+        DrawText("SKIP", skipBox.x + 128, skipBox.y + -50, 36, RED);
     }
 }

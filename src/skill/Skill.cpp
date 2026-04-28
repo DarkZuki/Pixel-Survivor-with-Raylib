@@ -20,10 +20,10 @@ Skill::~Skill() {
 void Skill::loadTexture() {
     if (texture.id > 0) UnloadTexture(texture);
     texture = {0};
-    if (skillType == 2) texture = LoadTexture("Graphics/thunderdungdung.png");
-    if (skillType == 3) texture = LoadTexture("Graphics/shuriken.png");
-    if (skillType == 4) texture = LoadTexture("Graphics/khiendoitruongmy.png");
-    if (skillType == 5) texture = LoadTexture("Graphics/buathor.png");
+    if (skillType == SKILL_THUNDER_STRIKE) texture = LoadTexture("Graphics/thunderdungdung.png");
+    if (skillType == SKILL_SHURIKEN) texture = LoadTexture("Graphics/shuriken.png");
+    if (skillType == SKILL_SHIELD) texture = LoadTexture("Graphics/khiendoitruongmy.png");
+    if (skillType == SKILL_HAMMER) texture = LoadTexture("Graphics/buathor.png");
 }
 
 const char* Skill::getName() const { return getSkillLevelSkillName(skillType); }
@@ -41,8 +41,8 @@ void Skill::update(std::vector<Enemy*>& enemies) {
     float dt = GetFrameTime();
     currentCooldownTimer += dt;
     orbitAngle += dt * 2.5f;
-    if (skillType == 0 || skillType == 3 || currentCooldownTimer >= stats.cooldown) {
-        if (skillType != 0 && skillType != 3) currentCooldownTimer = 0.0f;
+    if (skillType == SKILL_SHURIKEN || currentCooldownTimer >= stats.cooldown) {
+        if (skillType != SKILL_SHURIKEN) currentCooldownTimer = 0.0f;
         attack(enemies);
     }
     updateSkillProjectiles(projectiles, enemies, dt);
@@ -64,8 +64,7 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
     }
 
     switch (skillType) {
-        case 0:
-        case 3:
+        case SKILL_SHURIKEN:
             for (int i = 0; i < stats.count; i++) {
                 float angle = orbitAngle + 2.0f * PI * i / stats.count;
                 Vector2 pos = {playerPos.x + cosf(angle) * stats.range, playerPos.y + sinf(angle) * stats.range};
@@ -75,7 +74,7 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
             }
             break;
 
-        case 1:
+        case SKILL_LASER_BEAM:
             if (!target) break;
             {
                 Vector2 dir = Vector2Subtract({target->getX(), target->getY()}, playerPos);
@@ -85,7 +84,7 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
                 for (Enemy* enemy : enemies) {
                     if (!enemy) continue;
                     Vector2 enemyPos = {(float)enemy->getX(), (float)enemy->getY()};
-                    if (CheckCollisionCircleLine(enemyPos, 20.0f, playerPos, end)) enemy->takeDamage(totalDamage);
+                    if (CheckCollisionCircleLine(enemyPos, 30.0f, playerPos, end)) enemy->takeDamage(totalDamage);
                     if (stats.special && CheckCollisionCircleLine(enemyPos, 20.0f, playerPos, back)) enemy->takeDamage(totalDamage);
                 }
                 projectiles.push_back({playerPos, Vector2Scale(dir, stats.range), 0.2f, stats.effectRadius, 0.0f, SKYBLUE, 0, 0.0f});
@@ -93,7 +92,7 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
             }
             break;
 
-        case 2: {
+        case SKILL_THUNDER_STRIKE: {
             std::vector<Enemy*> targets;
             for (Enemy* enemy : enemies) {
                 if (enemy && Vector2Distance(playerPos, {(float)enemy->getX(), (float)enemy->getY()}) <= stats.range) targets.push_back(enemy);
@@ -108,19 +107,19 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
             break;
         }
 
-        case 4:
-        case 5:
-            if (skillType == 5 && !target) break;
+        case SKILL_SHIELD:
+        case SKILL_HAMMER:
+            if (skillType == SKILL_HAMMER && !target) break;
             {
                 Vector2 dir = {1.0f, 0.0f};
-                if (skillType == 5) {
+                if (skillType == SKILL_HAMMER) {
                     dir = Vector2Subtract({target->getX(), target->getY()}, playerPos);
                     if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f}; else dir = Vector2Normalize(dir);
                 }
                 for (int i = 0; i < stats.count; i++) {
-                    float angle = skillType == 4 ? 2.0f * PI * i / stats.count : ((float)(i - stats.count / 2) * 8.0f + (stats.count % 2 == 0 ? 4.0f : 0.0f)) * DEG2RAD;
+                    float angle = skillType == SKILL_SHIELD ? 2.0f * PI * i / stats.count : ((float)(i - stats.count / 2) * 8.0f + (stats.count % 2 == 0 ? 4.0f : 0.0f)) * DEG2RAD;
                     Vector2 velocity = Vector2Rotate(dir, angle);
-                    projectiles.push_back({playerPos, {velocity.x * stats.speed, velocity.y * stats.speed}, skillType == 4 ? 1.2f : 1.5f, stats.effectRadius, (float)(totalDamage + (skillType == 5 && stats.special ? 20 : 0)), skillType == 4 ? BLUE : ORANGE, skillType == 4 ? 2 : 3, skillType == 4 ? angle * RAD2DEG : 0.0f});
+                    projectiles.push_back({playerPos, {velocity.x * stats.speed, velocity.y * stats.speed}, skillType == SKILL_SHIELD ? 1.2f : 1.5f, stats.effectRadius, (float)(totalDamage + (skillType == SKILL_HAMMER && stats.special ? 20 : 0)), skillType == SKILL_SHIELD ? BLUE : ORANGE, skillType == SKILL_SHIELD ? 2 : 3, skillType == SKILL_SHIELD ? angle * RAD2DEG : 0.0f});
                 }
             }
             break;
@@ -131,12 +130,12 @@ void Skill::draw() const {
     if (skillLevel <= 0 || !player) return;
     Vector2 playerPos = {player->getX(), player->getY()};
 
-    if (skillType == 0 || skillType == 3) {
+    if (skillType == SKILL_SHURIKEN) {
         for (int i = 0; i < stats.count; i++) {
             float angle = orbitAngle + 2.0f * PI * i / stats.count;
             Vector2 pos = {playerPos.x + cosf(angle) * stats.range, playerPos.y + sinf(angle) * stats.range};
-            if (texture.id > 0) DrawTexturePro(texture, {0, 0, (float)texture.width, (float)texture.height}, {pos.x, pos.y, stats.effectRadius * 2.0f, stats.effectRadius * 2.0f}, {stats.effectRadius, stats.effectRadius}, angle * RAD2DEG, WHITE);
-            else DrawCircleV(pos, stats.effectRadius, skillType == 0 ? BLUE : SKYBLUE);
+            if (texture.id > 0) DrawTexturePro(texture, {0, 0, (float)texture.width, (float)texture.height}, {pos.x, pos.y, stats.effectRadius * 2.0f, stats.effectRadius * 2.0f}, {stats.effectRadius, stats.effectRadius}, GetTime() * 720.0f, WHITE);
+            else DrawCircleV(pos, stats.effectRadius, SKYBLUE);
         }
     }
 

@@ -6,12 +6,11 @@
 #include "../enemy/Enemy.h"
 #include <vector>
 
-const int SKILL_AUTO_BALLS = 0;
-const int SKILL_LASER_BEAM = 1;
-const int SKILL_THUNDER_STRIKE = 2;
-const int SKILL_SHURIKEN = 3;
-const int SKILL_SHIELD = 4;
-const int SKILL_HAMMER = 5;
+const int SKILL_LASER_BEAM = 0;
+const int SKILL_THUNDER_STRIKE = 1;
+const int SKILL_SHURIKEN = 2;
+const int SKILL_SHIELD = 3;
+const int SKILL_HAMMER = 4;
 
 struct SkillStats {
     int damage;

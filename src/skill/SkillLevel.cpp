@@ -1,9 +1,8 @@
 #include "SkillLevel.h"
 
 const SkillStats BASE_SKILL_STATS[] = {
-    {10, 0.0f, 60.0f, 0.0f, 1, 20.0f, false},
     {15, 5.0f, 400.0f, 0.0f, 1, 14.0f, false},
-    {20, 5.0f, 0.0f, 0.0f, 1, 120.0f, false},
+    {20, 5.0f, 450.0f, 0.0f, 1, 120.0f, false},
     {10, 0.0f, 70.0f, 0.0f, 1, 18.0f, false},
     {15, 4.5f, 18.0f, 280.0f, 1, 18.0f, false},
     {25, 2.2f, 0.0f, 320.0f, 1, 24.0f, false}
@@ -11,9 +10,8 @@ const SkillStats BASE_SKILL_STATS[] = {
 
 const char* getSkillLevelSkillName(int skillType) {
     switch (skillType) {
-        case SKILL_AUTO_BALLS: return "Auto Balls";
         case SKILL_LASER_BEAM: return "Laser Beam";
-        case SKILL_THUNDER_STRIKE: return "Thunder Strike";
+        case SKILL_THUNDER_STRIKE: return "Thunder";
         case SKILL_SHURIKEN: return "Shuriken";
         case SKILL_SHIELD: return "Shield";
         case SKILL_HAMMER: return "Hammer";
@@ -35,22 +33,6 @@ SkillLevel getSkillLevelData(int skillType, int level) {
     data.special = false;
 
     switch (skillType) {
-        case SKILL_AUTO_BALLS:
-        case SKILL_SHURIKEN:
-            switch (level) {
-                case 1: data.name = "Damage +5"; data.description = "Orbit damage +5"; data.damageBonus = 5; break;
-                case 2: data.name = "Range +10"; data.description = "Orbit radius +10"; data.rangeBonus = 10; break;
-                case 3: data.name = "+1 Projectile"; data.description = "One more orbit projectile"; data.projectileBonus = 1; break;
-                case 4: data.name = "Damage +10"; data.description = "Orbit damage +10"; data.damageBonus = 10; break;
-                case 5: data.name = "Range +10"; data.description = "Orbit radius +10"; data.rangeBonus = 10; break;
-                case 6: data.name = "+1 Projectile"; data.description = "One more orbit projectile"; data.projectileBonus = 1; break;
-                case 7: data.name = "Damage +10"; data.description = "Orbit damage +10"; data.damageBonus = 10; break;
-                case 8: data.name = "Range +15"; data.description = "Orbit radius +15"; data.rangeBonus = 15; break;
-                case 9: data.name = "+1 Projectile"; data.description = "One more orbit projectile"; data.projectileBonus = 1; break;
-                case 10: data.name = "Special"; data.description = "Orbit size increases"; data.effectRadiusBonus = 6; data.special = true; break;
-            }
-            break;
-
         case SKILL_LASER_BEAM:
             switch (level) {
                 case 1: data.name = "Damage +5"; data.description = "Laser damage +5"; data.damageBonus = 5; break;
@@ -78,6 +60,21 @@ SkillLevel getSkillLevelData(int skillType, int level) {
                 case 8: data.name = "Cooldown x0.8"; data.description = "Thunder cooldown x0.8"; data.cooldownMultiplier = 0.8f; break;
                 case 9: data.name = "Radius +30"; data.description = "Thunder effect size +30"; data.effectRadiusBonus = 30; break;
                 case 10: data.name = "+1 Projectile"; data.description = "Thunder strikes one more target"; data.projectileBonus = 1; data.special = true; break;
+            }
+            break;
+
+        case SKILL_SHURIKEN:
+            switch (level) {
+                case 1: data.name = "Damage +5"; data.description = "Orbit damage +5"; data.damageBonus = 5; break;
+                case 2: data.name = "Range +10"; data.description = "Orbit radius +10"; data.rangeBonus = 10; break;
+                case 3: data.name = "+1 Projectile"; data.description = "One more orbit projectile"; data.projectileBonus = 1; break;
+                case 4: data.name = "Damage +10"; data.description = "Orbit damage +10"; data.damageBonus = 10; break;
+                case 5: data.name = "Range +10"; data.description = "Orbit radius +10"; data.rangeBonus = 10; break;
+                case 6: data.name = "+1 Projectile"; data.description = "One more orbit projectile"; data.projectileBonus = 1; break;
+                case 7: data.name = "Damage +10"; data.description = "Orbit damage +10"; data.damageBonus = 10; break;
+                case 8: data.name = "Range +15"; data.description = "Orbit radius +15"; data.rangeBonus = 15; break;
+                case 9: data.name = "+1 Projectile"; data.description = "One more orbit projectile"; data.projectileBonus = 1; break;
+                case 10: data.name = "Special"; data.description = "Orbit size increases"; data.effectRadiusBonus = 6; data.special = true; break;
             }
             break;
 
@@ -117,7 +114,7 @@ SkillLevel getSkillLevelData(int skillType, int level) {
 
 SkillStats getSkillStats(int skillType, int skillLevel) {
     SkillStats stats = {0, 1.0f, 0.0f, 0.0f, 1, 10.0f, false};
-    if (skillType >= 0 && skillType < 6) stats = BASE_SKILL_STATS[skillType];
+    if (skillType >= 0 && skillType < 5) stats = BASE_SKILL_STATS[skillType];
 
     for (int level = 1; level <= skillLevel; level++) {
         SkillLevel data = getSkillLevelData(skillType, level);
