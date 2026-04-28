@@ -1,9 +1,11 @@
 #include "CollisionMap.h"
 #include <cstdio>
 
+// Khời tạo map set trc g. trị
 CollisionMap::CollisionMap() : pixelData(nullptr), width(0), height(0), loaded(false) {
 }
 
+// Hủy map
 void CollisionMap::unload() {
     if (collisionImage.data != nullptr) {
         UnloadImage(collisionImage);
@@ -16,10 +18,12 @@ void CollisionMap::unload() {
     loaded = false;
 }
 
+// Gọi hủy map
 CollisionMap::~CollisionMap() {
     unload();
 }
 
+// Load map từ file
 bool CollisionMap::load(const std::string& filename) {
     if (collisionImage.data != nullptr) {
         unload();
@@ -36,7 +40,7 @@ bool CollisionMap::load(const std::string& filename) {
         return false;
     }
 
-    // Convert to RGBA format for easy pixel access
+    // Đổi pixel sang RGBA để dễ check màu
     ImageFormat(&collisionImage, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
 
     width = collisionImage.width;
@@ -48,45 +52,46 @@ bool CollisionMap::load(const std::string& filename) {
     return true;
 }
 
+// Kiểm tra đi dc ko 
 bool CollisionMap::isWalkable(float worldX, float worldY, float playerRadius) const {
     if (!loaded || pixelData == nullptr) {
-        // If no collision map loaded, allow movement everywhere
+        // Chưa có map thì đi đâu cũng dc
         return true;
     }
     
-    // Check multiple points around the player to prevent crossing borders
-    // We check the center and 4 points around the player's radius
+    // Kiểm tra nhiều điểm xem đi dc ko
+    // Kiểm tra 4 điểm quanh bán kính ng chơi
     const int checkPoints = 5;
     const float checkOffsets[5][2] = {
-        {0.0f, 0.0f},   // Center
-        {playerRadius, 0.0f},   // Right
-        {-playerRadius, 0.0f},  // Left
-        {0.0f, playerRadius},   // Down
-        {0.0f, -playerRadius}   // Up
+        {0.0f, 0.0f},   // Giữa
+        {playerRadius, 0.0f},   // Phải
+        {-playerRadius, 0.0f},  // Trái
+        {0.0f, playerRadius},   // dưới
+        {0.0f, -playerRadius}   // Trên
     };
     
     for (int i = 0; i < checkPoints; i++) {
         float checkX = worldX + checkOffsets[i][0];
         float checkY = worldY + checkOffsets[i][1];
         
-        // Clamp to image bounds
+        // Giới hạn vòng map
         int pixelX = (int)checkX;
         int pixelY = (int)checkY;
         
         if (pixelX < 0 || pixelX >= width || pixelY < 0 || pixelY >= height) {
-            // Out of bounds - treat as obstacle
+            // Ngoài vòng -> vật cản
             return false;
         }
         
-        // Get pixel color
+        // Lấy màu
         int index = pixelY * width + pixelX;
         Color pixel = pixelData[index];
         
-        // Calculate brightness (simple average of RGB)
+        // Tính toán độ sáng so sánh màu
         float brightness = (pixel.r + pixel.g + pixel.b) / 3.0f;
         
-        // If pixel is dark (black or near black), it's an obstacle
-        // Threshold: if brightness < 128, consider it an obstacle
+        // Nếu đen hoặc gần đen là vật cản
+        // ĐK: Độ sáng <128
         if (brightness < 128) {
             return false;
         }
@@ -95,6 +100,7 @@ bool CollisionMap::isWalkable(float worldX, float worldY, float playerRadius) co
     return true;
 }
 
+// Hàm trả về màu pixel
 Color CollisionMap::getPixelColor(float worldX, float worldY) const {
     if (!loaded || pixelData == nullptr) {
         return BLANK;
@@ -111,7 +117,7 @@ Color CollisionMap::getPixelColor(float worldX, float worldY) const {
     return pixelData[index];
 }
 
-// Global collision map instance
+// Thông số map vẽ đè
 CollisionMap gCollisionMap;
 
 void InitCollisionMap(const std::string& filename) {

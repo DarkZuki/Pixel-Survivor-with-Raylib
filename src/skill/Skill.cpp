@@ -2,7 +2,15 @@
 #include "SkillLevel.h"
 #include "raymath.h"
 
+namespace {
+// Chuan hoa huong bay, neu vector rong thi tra ve huong mac dinh
+Vector2 NormalizeOrFallback(Vector2 direction) {
+    return Vector2Length(direction) > 0.0f ? Vector2Normalize(direction) : Vector2{1.0f, 0.0f};
+}
+}
+
 Skill::Skill(Player* owner, int type) {
+    // Khoi tao skill va dong bo ngay stat/texture theo type
     player = owner;
     skillType = type;
     skillLevel = 1;
@@ -18,6 +26,7 @@ Skill::~Skill() {
 }
 
 void Skill::loadTexture() {
+    // Moi lan doi skill se clear texture cu roi tai texture moi
     if (texture.id > 0) UnloadTexture(texture);
     texture = {0};
     if (skillType == SKILL_THUNDER_STRIKE) texture = LoadTexture("Graphics/thunderdungdung.png");
@@ -31,6 +40,7 @@ int Skill::getLevel() const { return skillLevel; }
 void Skill::updateSkillStats() { stats = getSkillStats(skillType, skillLevel); }
 
 void Skill::setLevel(int newLevel) {
+    // Khoa level vao khoang hop le va tat projectile neu level = 0
     skillLevel = newLevel < 0 ? 0 : (newLevel > 10 ? 10 : newLevel);
     if (skillLevel <= 0) projectiles.clear();
     updateSkillStats();
@@ -38,6 +48,7 @@ void Skill::setLevel(int newLevel) {
 
 void Skill::update(std::vector<Enemy*>& enemies) {
     if (skillLevel <= 0 || !player) return;
+    // Tang cooldown va kich hoat attack khi du dieu kien
     float dt = GetFrameTime();
     currentCooldownTimer += dt;
     orbitAngle += dt * 2.5f;
@@ -56,6 +67,7 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
     Enemy* target = nullptr;
     float best = 999999.0f;
 
+    // Tim enemy gan nhat cho cac skill can target
     for (Enemy* enemy : enemies) {
         if (!enemy) continue;
         float ex = enemy->getX(), ey = enemy->getY();
@@ -65,6 +77,7 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
 
     switch (skillType) {
         case SKILL_SHURIKEN:
+            // Shuriken quay quanh player va gay damage lien tuc
             for (int i = 0; i < stats.count; i++) {
                 float angle = orbitAngle + 2.0f * PI * i / stats.count;
                 Vector2 pos = {playerPos.x + cosf(angle) * stats.range, playerPos.y + sinf(angle) * stats.range};
@@ -77,8 +90,8 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
         case SKILL_LASER_BEAM:
             if (!target) break;
             {
-                Vector2 dir = Vector2Subtract({target->getX(), target->getY()}, playerPos);
-                if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f}; else dir = Vector2Normalize(dir);
+                // Laser ban thang theo huong target, special se co them tia nguoc
+                Vector2 dir = NormalizeOrFallback(Vector2Subtract({target->getX(), target->getY()}, playerPos));
                 Vector2 end = Vector2Add(playerPos, Vector2Scale(dir, stats.range));
                 Vector2 back = Vector2Add(playerPos, Vector2Scale(dir, -stats.range));
                 for (Enemy* enemy : enemies) {
@@ -93,6 +106,7 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
             break;
 
         case SKILL_THUNDER_STRIKE: {
+            // Set danh ngau nhien cac muc tieu trong tam
             std::vector<Enemy*> targets;
             for (Enemy* enemy : enemies) {
                 if (enemy && Vector2Distance(playerPos, {(float)enemy->getX(), (float)enemy->getY()}) <= stats.range) targets.push_back(enemy);
@@ -111,10 +125,10 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
         case SKILL_HAMMER:
             if (skillType == SKILL_HAMMER && !target) break;
             {
+                // Shield va hammer sinh projectile theo doi hinh rieng
                 Vector2 dir = {1.0f, 0.0f};
                 if (skillType == SKILL_HAMMER) {
-                    dir = Vector2Subtract({target->getX(), target->getY()}, playerPos);
-                    if (dir.x == 0 && dir.y == 0) dir = {1.0f, 0.0f}; else dir = Vector2Normalize(dir);
+                    dir = NormalizeOrFallback(Vector2Subtract({target->getX(), target->getY()}, playerPos));
                 }
                 for (int i = 0; i < stats.count; i++) {
                     float angle = skillType == SKILL_SHIELD ? 2.0f * PI * i / stats.count : ((float)(i - stats.count / 2) * 8.0f + (stats.count % 2 == 0 ? 4.0f : 0.0f)) * DEG2RAD;
@@ -131,6 +145,7 @@ void Skill::draw() const {
     Vector2 playerPos = {player->getX(), player->getY()};
 
     if (skillType == SKILL_SHURIKEN) {
+        // Ve shuriken dang orbit quanh player
         for (int i = 0; i < stats.count; i++) {
             float angle = orbitAngle + 2.0f * PI * i / stats.count;
             Vector2 pos = {playerPos.x + cosf(angle) * stats.range, playerPos.y + sinf(angle) * stats.range};
@@ -141,16 +156,19 @@ void Skill::draw() const {
 
     for (const SkillProjectile& projectile : projectiles) {
         if (projectile.type == 0) {
+            // Ve laser beam
             Vector2 end = Vector2Add(projectile.position, projectile.velocity);
             DrawLineEx(projectile.position, end, projectile.radius, projectile.color);
             DrawLineEx(projectile.position, end, projectile.radius / 3.0f, WHITE);
         } else if (projectile.type == 1) {
+            // Ve hieu ung set roi xuong
             if (texture.id > 0) DrawTexturePro(texture, {0, 0, (float)texture.width, (float)texture.height}, {projectile.position.x, projectile.position.y - projectile.radius * 0.5f, projectile.radius * 0.45f, projectile.radius}, {projectile.radius * 0.225f, projectile.radius * 0.5f}, 0.0f, WHITE);
             else {
                 DrawLineEx({projectile.position.x, projectile.position.y - projectile.radius}, projectile.position, 6.0f, YELLOW);
                 DrawCircleV(projectile.position, 16.0f, ORANGE);
             }
         } else if (projectile.type == 2 || projectile.type == 3) {
+            // Ve shield/hammer projectile bang texture neu co
             if (texture.id > 0) {
                 float size = projectile.type == 2 ? projectile.radius * 2.0f : projectile.radius * 3.0f;
                 float origin = projectile.type == 2 ? projectile.radius : projectile.radius * 1.5f;
@@ -161,6 +179,7 @@ void Skill::draw() const {
 }
 
 void updateSkillProjectiles(std::vector<SkillProjectile>& projectiles, std::vector<Enemy*>& enemies, float dt) {
+    // Duyet nguoc de xoa projectile an toan trong luc update
     for (int i = (int)projectiles.size() - 1; i >= 0; i--) {
         SkillProjectile& projectile = projectiles[i];
         projectile.position.x += projectile.velocity.x * dt;
@@ -168,6 +187,7 @@ void updateSkillProjectiles(std::vector<SkillProjectile>& projectiles, std::vect
         projectile.lifeTime -= dt;
         projectile.angle += 360.0f * dt;
         if (projectile.damage > 0.0f) {
+            // Projectile gay damage se bien mat sau khi cham enemy
             for (Enemy* enemy : enemies) {
                 if (enemy && CheckCollisionCircles(projectile.position, projectile.radius, {(float)enemy->getX(), (float)enemy->getY()}, 10.0f)) {
                     enemy->takeDamage((int)projectile.damage);
@@ -181,5 +201,6 @@ void updateSkillProjectiles(std::vector<SkillProjectile>& projectiles, std::vect
 }
 
 void drawSkillProjectiles(const std::vector<SkillProjectile>& projectiles) {
+    // Ham ve don gian bang circle de dung khi can
     for (const SkillProjectile& projectile : projectiles) DrawCircleV(projectile.position, projectile.radius, projectile.color);
 }

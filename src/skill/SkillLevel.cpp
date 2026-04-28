@@ -1,5 +1,6 @@
 #include "SkillLevel.h"
 
+// Chi so goc cua tung skill truoc khi cong bonus level
 const SkillStats BASE_SKILL_STATS[] = {
     {15, 5.0f, 400.0f, 0.0f, 1, 14.0f, false},
     {20, 5.0f, 450.0f, 0.0f, 1, 120.0f, false},
@@ -8,6 +9,7 @@ const SkillStats BASE_SKILL_STATS[] = {
     {25, 2.2f, 0.0f, 320.0f, 1, 24.0f, false}
 };
 
+// Tra ten hien thi theo ma skill
 const char* getSkillLevelSkillName(int skillType) {
     switch (skillType) {
         case SKILL_LASER_BEAM: return "Laser Beam";
@@ -19,6 +21,7 @@ const char* getSkillLevelSkillName(int skillType) {
     }
 }
 
+// Tra bonus cu the cua tung level nang cap
 SkillLevel getSkillLevelData(int skillType, int level) {
     SkillLevel data;
     data.level = level;
@@ -112,6 +115,7 @@ SkillLevel getSkillLevelData(int skillType, int level) {
     return data;
 }
 
+// Cong don bonus tu level 1 den level hien tai
 SkillStats getSkillStats(int skillType, int skillLevel) {
     SkillStats stats = {0, 1.0f, 0.0f, 0.0f, 1, 10.0f, false};
     if (skillType >= 0 && skillType < 5) stats = BASE_SKILL_STATS[skillType];

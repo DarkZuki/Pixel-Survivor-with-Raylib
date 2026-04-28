@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "raymath.h"
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -16,6 +17,7 @@
 #include "upgrade/UpgradeSystem.h"
 using namespace std;
 
+// Tai sprite cho 5 loai enemy vao mang dung chung
 void loadEnemySprites(Texture2D sprites[]) {
     const char* paths[5] = {
         "Graphics/Ultron-Perler-Bead-Pattern-removebg-preview.png",
@@ -27,6 +29,7 @@ void loadEnemySprites(Texture2D sprites[]) {
     for (int i = 0; i < 5; i++) sprites[i] = LoadTexture(paths[i]);
 }
 
+// Doc phim 1 2 3 de chon do kho
 int getDifficultyChoice() {
     if (IsKeyPressed(KEY_ONE)) return 0;
     if (IsKeyPressed(KEY_TWO)) return 1;
@@ -34,6 +37,7 @@ int getDifficultyChoice() {
     return -1;
 }
 
+// Ve man hinh chon difficulty truoc khi vao tran
 void drawDifficultyScreen() {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -45,6 +49,7 @@ void drawDifficultyScreen() {
     EndDrawing();
 }
 
+// Ve title screen va chu nhap nhay moi vao game
 void drawTitleScreen(Texture2D mainScreen) {
     BeginDrawing();
     ClearBackground(BLACK);
@@ -57,6 +62,7 @@ void drawTitleScreen(Texture2D mainScreen) {
     EndDrawing();
 }
 
+// Ve phan world ben trong camera cua player
 void drawWorld(Player& player, Texture2D floorTexture, Texture2D wallsTexture, const vector<Entity*>& entities, const vector<Skill*>& skills, const vector<WeaponProjectile>& weaponProjectiles) {
     BeginMode2D(player.getCamera());
     DrawTexture(floorTexture, 0, 0, WHITE);
@@ -67,6 +73,7 @@ void drawWorld(Player& player, Texture2D floorTexture, Texture2D wallsTexture, c
     EndMode2D();
 }
 
+// Ap dung nang cap da chon vao skill hoac vu khi
 void applyUpgrade(UpgradeSystem& upgradeSystem, vector<Skill*>& allSkills, vector<Skill*>& skillInventory, vector<Weapon*>& allWeapons, vector<Weapon*>& weaponInventory, Weapon*& currentWeapon) {
     UpgradeOption selected = upgradeSystem.getSelectedUpgrade();
 
@@ -92,6 +99,7 @@ void applyUpgrade(UpgradeSystem& upgradeSystem, vector<Skill*>& allSkills, vecto
     }
 }
 
+// Neu menu upgrade dang mo thi update, draw va tam dung gameplay
 bool updateUpgradeMenu(Player& player, UpgradeSystem& upgradeSystem, vector<Skill*>& allSkills, vector<Skill*>& skillInventory, vector<Weapon*>& allWeapons, vector<Weapon*>& weaponInventory, Weapon*& currentWeapon, Texture2D floorTexture, Texture2D wallsTexture, const vector<Entity*>& entities, const vector<WeaponProjectile>& weaponProjectiles) {
     if (!upgradeSystem.isMenuActive()) return false;
     upgradeSystem.update();
@@ -108,12 +116,14 @@ bool updateUpgradeMenu(Player& player, UpgradeSystem& upgradeSystem, vector<Skil
     return true;
 }
 
+// Spawn item hoi mau dinh ky tren map
 void spawnHpItem(vector<Item*>& items, vector<Entity*>& entities) {
     Item* hpItem = new Item(GetRandomValue(120, 1800), GetRandomValue(90, 950), 0, 1);
     items.push_back(hpItem);
     entities.push_back(hpItem);
 }
 
+// Ve man hinh game over khi player het mau
 bool drawGameOver(Player& player, float gameTimer) {
     if (player.getHp() > 0) return false;
     int mins = (int)(gameTimer / 60), secs = (int)gameTimer % 60;
@@ -126,6 +136,7 @@ bool drawGameOver(Player& player, float gameTimer) {
     return true;
 }
 
+// Ve man hinh chien thang khi qua wave cuoi va diet boss
 bool drawVictory(WaveManager& waveSystem, vector<Enemy*>& enemies, Player& player) {
     if (waveSystem.getCurrentWaveNumber() != 20 || !waveSystem.hasBossBeenSpawned() || !enemies.empty()) return false;
     int total = (int)waveSystem.getInternalTimer(), mins = total / 60, secs = total % 60;
@@ -139,6 +150,7 @@ bool drawVictory(WaveManager& waveSystem, vector<Enemy*>& enemies, Player& playe
     return true;
 }
 
+// Enemy ranged se tao bullet huong ve player khi den nhip ban
 void fireEnemyBullets(vector<Enemy*>& enemies, Player& player, vector<Bullet*>& bullets, vector<Entity*>& entities) {
     for (auto e : enemies) {
         if (e->getEnemyType() != 3 || !e->canShoot()) continue;
@@ -149,6 +161,7 @@ void fireEnemyBullets(vector<Enemy*>& enemies, Player& player, vector<Bullet*>& 
     }
 }
 
+// Spawn quai theo wave hien tai, co xu ly rieng cho boss
 void spawnEnemyWave(WaveManager& waveSystem, Player& player, Texture2D enemySprites[], vector<Enemy*>& enemies, vector<Entity*>& entities) {
     const float PIXEL_SPAWN_RADIUS = 960.0f;
     float angle = GetRandomValue(0, 360) * (PI / 180.0f);
@@ -181,6 +194,7 @@ void spawnEnemyWave(WaveManager& waveSystem, Player& player, Texture2D enemySpri
 }
 
 int main() {
+    // Khoi tao cua so game, FPS va collision map
     InitWindow(1920, 1040, "Arcane Rampage");
     SetExitKey(KEY_NULL);
     SetTargetFPS(60);
@@ -192,6 +206,7 @@ int main() {
     Texture2D wallsTexture = LoadTexture("Graphics/Walls.png");
     Texture2D mainScreenTexture = LoadTexture("Graphics/Main screen.png");
 
+    // Toan bo state runtime chinh cua tran dau
     Player player;
     WaveManager waveSystem;
     vector<Entity*> entities = {&player};
@@ -199,7 +214,6 @@ int main() {
     vector<Bullet*> bullets;
     vector<Item*> items;
     vector<WeaponProjectile> weaponProjectiles;
-    float enemyFireTimer = 0.0f;
     float spawnTimer = 0.0f;
     float hpSpawnTimer = 0.0f;
     bool isPaused = false;
@@ -209,6 +223,7 @@ int main() {
     bool gameStarted = false;
     bool showTitleScreen = true;
 
+    // Danh sach skill tong va inventory skill dang trang bi
     vector<Skill*> allSkills = {
         new Skill(&player, SKILL_LASER_BEAM),
         new Skill(&player, SKILL_THUNDER_STRIKE),
@@ -232,6 +247,7 @@ int main() {
     bool shouldShowUpgrade = true;
     int previousLevel = 1;
 
+    // Vong lap game chinh
     while (!WindowShouldClose()) {
         if (showTitleScreen) {
             if (IsKeyPressed(KEY_SPACE)) showTitleScreen = false;
@@ -239,11 +255,13 @@ int main() {
             continue;
         }
 
+        // Pause bang nut tren UI hoac phim ESC
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), pauseButton)) isPaused = !isPaused;
         if (IsKeyPressed(KEY_ESCAPE)) isPaused = !isPaused;
 
         if (!isPaused) {
             if (!gameStarted) {
+                // Bat buoc chon difficulty truoc khi gameplay bat dau
                 currentDiffID = getDifficultyChoice();
                 gameStarted = currentDiffID >= 0;
                 if (gameStarted) waveSystem.setDifficulty(currentDiffID);
@@ -254,6 +272,7 @@ int main() {
             float dt = GetFrameTime();
             if (updateUpgradeMenu(player, upgradeSystem, allSkills, skillInventory, allWeapons, weaponInventory, currentWeapon, floorTexture, wallsTexture, entities, weaponProjectiles)) continue;
 
+            // Moi lan len level thi mo them 1 lan upgrade menu
             if (player.getLevel() > previousLevel) {
                 shouldShowUpgrade = true;
                 previousLevel = player.getLevel();
@@ -264,6 +283,7 @@ int main() {
                 continue;
             }
 
+            // Dinh ky spawn item HP moi 10 giay
             hpSpawnTimer += dt;
             if (hpSpawnTimer >= 10.0f) {
                 spawnHpItem(items, entities);
@@ -281,27 +301,32 @@ int main() {
             waveSystem.update(dt);
             gameTimer += dt;
 
+            // Cho phep doi nhanh giua 2 vu khi
             if (IsKeyPressed(KEY_ONE) && weaponInventory.size() > 0) currentWeapon = weaponInventory[0];
             if (IsKeyPressed(KEY_TWO) && weaponInventory.size() > 1) currentWeapon = weaponInventory[1];
 
+            // Huong tan cong dua theo vi tri chuot trong world
             Vector2 attackTarget = GetScreenToWorld2D(GetMousePosition(), player.getCamera());
             if (currentWeapon != nullptr) currentWeapon->update(player, enemies, weaponProjectiles, attackTarget, IsMouseButtonDown(MOUSE_BUTTON_LEFT));
             updateProjectiles(weaponProjectiles, enemies, dt);
 
+            // Update toan bo entity va sau do cho enemy ranged ban dan
             for (auto e : entities) e->update();
-            enemyFireTimer += dt;
             fireEnemyBullets(enemies, player, bullets, entities);
 
-            if (!waveSystem.isFinished()) spawnTimer += GetFrameTime();
+            // Spawn quai theo nhip cua wave manager
+            spawnTimer += dt;
             if (spawnTimer >= waveSystem.getSpawnInterval()) {
                 spawnEnemyWave(waveSystem, player, enemySprites, enemies, entities);
                 spawnTimer = 0.0f;
             }
 
+            // Dan co ban trung enemy se gay sat thuong truc tiep
             for (size_t i = 0; i < enemies.size(); i++) {
                 float hitboxRadius = waveSystem.getCurrentWaveNumber() == 20 ? 70.0f : 15.0f;
                 for (size_t j = 0; j < bullets.size(); j++) {
-                    if (!bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), enemies[i]->getX(), enemies[i]->getY()) < hitboxRadius) {
+                    if (!bullets[j]->getIsEnemyBullet() &&
+                        Vector2Distance({bullets[j]->getX(), bullets[j]->getY()}, {enemies[i]->getX(), enemies[i]->getY()}) < hitboxRadius) {
                         enemies[i]->takeDamage(20);
                         bullets[j]->setX(-1000);
                     }
@@ -311,12 +336,15 @@ int main() {
             player.update();
             for (auto s : skillInventory) s->update(enemies);
 
+            // Enemy cham vao player se gay damage contact
             for (auto enemy : enemies) {
-                if (distance(player.getX(), player.getY(), enemy->getX(), enemy->getY()) < 30) player.takeDamage(enemy->getDamage());
+                if (Vector2Distance({player.getX(), player.getY()}, {enemy->getX(), enemy->getY()}) < 30.0f) player.takeDamage(enemy->getDamage());
             }
 
+            // Dan enemy trung player se bi xoa khoi scene
             for (size_t j = 0; j < bullets.size(); j++) {
-                if (bullets[j]->getIsEnemyBullet() && distance(bullets[j]->getX(), bullets[j]->getY(), player.getX(), player.getY()) < 15) {
+                if (bullets[j]->getIsEnemyBullet() &&
+                    Vector2Distance({bullets[j]->getX(), bullets[j]->getY()}, {player.getX(), player.getY()}) < 15.0f) {
                     player.takeDamage(bullets[j]->getDamage());
                     removeEntity(entities, bullets[j]);
                     bullets.erase(bullets.begin() + j);
@@ -324,6 +352,7 @@ int main() {
                 }
             }
 
+            // Item co the het han hoac duoc player nhat len
             for (size_t k = 0; k < items.size(); k++) {
                 if (items[k]->isExpired()) {
                     removeEntity(entities, items[k]);
@@ -333,7 +362,7 @@ int main() {
                     continue;
                 }
 
-                if (distance(player.getX(), player.getY(), items[k]->getX(), items[k]->getY()) < 30) {
+                if (Vector2Distance({player.getX(), player.getY()}, {items[k]->getX(), items[k]->getY()}) < 30.0f) {
                     if (items[k]->getID() == 1) player.setHp(player.getHp() + 10);
                     else {
                         int oldLevel = player.getLevel();
@@ -348,28 +377,19 @@ int main() {
             }
         }
 
+        // Enemy chet se roi exp item va cong diem
         for (int i = (int)enemies.size() - 1; i >= 0; i--) {
             if (enemies[i]->getHp() <= 0) {
-                int scoreType = enemies[i]->getEnemyType();
-                if (scoreType == 0) player.addScore(10);
-                else if (scoreType == 1) player.addScore(15);
-                else if (scoreType == 2) player.addScore(25);
-                else if (scoreType == 3) player.addScore(20);
+                player.addScore(enemies[i]->getScoreReward());
 
-                int val = 10;
-                int type = enemies[i]->getEnemyType();
-                if (type == 1) val = 15;
-                if (type == 2) val = 25;
-                if (type == 3) val = 20;
-
-                Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), val, 0);
+                Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), enemies[i]->getExpReward(), 0);
                 items.push_back(item);
                 entities.push_back(item);
                 removeEnemy(entities, enemies, i);
             }
         }
 
-        // Draw
+        // Ve world truoc, UI sau de UI khong bi camera keo theo
         BeginDrawing();
         ClearBackground(BLACK);
         BeginMode2D(player.getCamera());
@@ -382,15 +402,15 @@ int main() {
         // End camera mode
         EndMode2D();
         
-        // Draw UI elements (outside camera mode so they stay fixed on screen)
+        // Ve HUD co dinh ngoai camera
         DrawFPS(24, 18);
         DrawText(TextFormat("HP: %d/%d", player.getHp(), player.getMaxHp()), 24, 54, 36, WHITE);
         DrawText(TextFormat("LV: %d", player.getLevel()), 24, 99, 36, YELLOW);
         
-        // Draw current weapon name
+        // Hien thi ten vu khi dang su dung
         DrawText(currentWeapon ? TextFormat("Weapon: %s (1-2 to switch)", currentWeapon->getName()) : "Weapon: None", 24, 189, 27, GREEN);
         
-        // Draw EXP progress bar
+        // Thanh kinh nghiem o cuoi man hinh
         int expBarWidth = 1920;
         int expBarHeight = 36;
         int expBarX = 0;
@@ -408,7 +428,7 @@ int main() {
        
 
         DrawText(TextFormat("Score: %d", player.getScore()), 24, 144, 36, WHITE);
-        // Format time as MM:SS
+        // Hien thi wave va thoi gian song sot
         int total = (int)waveSystem.getInternalTimer();
         int waveMins = (int)(total / 60);
         int waveSecs = (int)(total % 60);
@@ -417,6 +437,7 @@ int main() {
         DrawText(TextFormat("Wave: %d", waveSystem.getCurrentWaveNumber()), 850, 96, 40, waveColor);
         DrawText(TextFormat("Time: %02d:%02d", waveMins, waveSecs), 792, 36, 45, WHITE);
 
+        // Cac o inventory cua vu khi va skill
         Rectangle slot1 = {432, 860, 126, 126};
         Rectangle slot2 = {648, 860, 126, 126};
         Rectangle skillSlot1 = {1146, 860, 126, 126};
@@ -459,39 +480,39 @@ int main() {
             DrawText(skillInventory[2]->getName(), skillSlot3.x + 8, skillSlot3.y + 50, 18, WHITE);
         }
 
-         // Náº¾U ÄANG PAUSE THĂŒ Váº¼ Báº¢NG MENU
+         // NĂ¡ÂºÂ¾U Ă„ÂANG PAUSE THÄ‚Å’ VĂ¡ÂºÂ¼ BĂ¡ÂºÂ¢NG MENU
         if (isPaused) {
-            // Váº½ lá»›p ná»n má» Ä‘Ă¨ lĂªn game
+            // VĂ¡ÂºÂ½ lĂ¡Â»â€ºp nĂ¡Â»Ân mĂ¡Â»Â Ă„â€˜Ä‚Â¨ lÄ‚Âªn game
             DrawRectangle(0, 0, 1920, 1040, Fade(BLACK, 0.6f));
 
-            // Váº½ cĂ¡i báº£ng Menu á»Ÿ giá»¯a
+            // VĂ¡ÂºÂ½ cÄ‚Â¡i bĂ¡ÂºÂ£ng Menu Ă¡Â»Å¸ giĂ¡Â»Â¯a
             DrawRectangle(660, 250, 600, 420, RAYWHITE);
             DrawText("GAME PAUSED", 765, 310, 54, BLACK);
 
-            // NĂºt RESUME
+            // NÄ‚Âºt RESUME
             Rectangle resumeBtn = { 760, 410, 400, 80 };
             DrawRectangleRec(resumeBtn, LIGHTGRAY);
             DrawText("RESUME", 870, 432, 36, BLACK);
 
-            // NĂºt EXIT
+            // NÄ‚Âºt EXIT
             Rectangle exitBtn = { 760, 530, 400, 80 };
             DrawRectangleRec(exitBtn, RED);
             DrawText("EXIT", 915, 552, 36, WHITE);
 
-            // Check click vĂ o cĂ¡c nĂºt trong Menu
+            // Check click vÄ‚Â o cÄ‚Â¡c nÄ‚Âºt trong Menu
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 Vector2 mousePos = GetMousePosition();
                 if (CheckCollisionPointRec(mousePos, resumeBtn)) {
-                    isPaused = false; // Cháº¡y tiáº¿p
+                    isPaused = false; // ChĂ¡ÂºÂ¡y tiĂ¡ÂºÂ¿p
                 }
                 if (CheckCollisionPointRec(mousePos, exitBtn)) {
-                    break; // ThoĂ¡t vĂ²ng láº·p main -> Out game
+                    break; // ThoÄ‚Â¡t vÄ‚Â²ng lĂ¡ÂºÂ·p main -> Out game
                 }
             }
         }
         EndDrawing();
     }
-    // giáº£i phĂ³ng bá»™ nhá»› 
+    // Giai phong texture truoc khi dong cua so
     for (int i=0; i<5 ; i++){
         UnloadTexture(enemySprites[i]);
     }

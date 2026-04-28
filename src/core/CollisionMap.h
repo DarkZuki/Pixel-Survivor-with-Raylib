@@ -4,7 +4,7 @@
 
 class CollisionMap {
 private:
-    Image collisionImage = { 0 };  // Initialize to prevent garbage data
+    Image collisionImage = { 0 };  // Khởi tạo = 0 để tránh lỗi tham số
     Color* pixelData;
     int width;
     int height;
@@ -20,29 +20,29 @@ public:
     CollisionMap(CollisionMap&&) = delete;
     CollisionMap& operator=(CollisionMap&&) = delete;
     
-    // Load collision map from image file
+    // Tạo map từ file ảnh
     bool load(const std::string& filename);
     
-    // Check if a position is walkable (returns true if walkable)
-    // Uses simple threshold: dark pixels (black) are obstacles, light pixels (white) are walkable
+    // Kiểm tra đi dc hay ko
+    // Kiểm tra màu pixel, đen = ko đi, trắng = đi dc
     bool isWalkable(float worldX, float worldY, float playerRadius = 18.0f) const;
     
-    // Get image dimensions
+    // Hàm trả về dài x rộng
     int getWidth() const { return width; }
     int getHeight() const { return height; }
     
-    // Check if collision map is loaded
+    // Kiểm tra map va chạm tải chưa
     bool isLoaded() const { return loaded; }
     
-    // Get pixel color at world position (for debugging)
+    // Trả về màu
     Color getPixelColor(float worldX, float worldY) const;
 };
 
-// Global collision map instance
+// Tham số map va chạm
 extern CollisionMap gCollisionMap;
 
-// Initialize the global collision map
+// Khời tạo map va chạm
 void InitCollisionMap(const std::string& filename);
 
-// Check if a world position is walkable
+// Kiểm tra vị trí đi dc ko
 bool IsPositionWalkable(float x, float y, float playerRadius = 18.0f);
