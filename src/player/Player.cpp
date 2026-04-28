@@ -107,7 +107,13 @@ void Player::update() {
 }
 
 void Player::draw() {
-    DrawCircle(x, y, 18, BLUE);
+    static Texture2D playerTexture = LoadTexture("Graphics/Player.png");
+    Rectangle source = {0.0f, 0.0f, (float)playerTexture.width, (float)playerTexture.height};
+    if (facingDir.x < 0) {
+        source.width = -source.width;
+    }
+    Rectangle dest = {x - 48, y - 48, 96, 96};
+    DrawTexturePro(playerTexture, source, dest, {0.0f, 0.0f}, 0.0f, WHITE);
     DrawText(TextFormat("HP: %d/%d", hp, maxHp), x - 45, y - 54, 18, WHITE);
     DrawText(TextFormat("LV: %d", level), x - 27, y - 76, 18, YELLOW);
 }

@@ -37,11 +37,11 @@ int getDifficultyChoice() {
 void drawDifficultyScreen() {
     BeginDrawing();
     ClearBackground(BLACK);
-    DrawText("Select Difficulty Level:", 672, 220, 36, GRAY);
-    DrawText("[1] EASY - Low Density / Weak Enemies", 576, 320, 36, GREEN);
-    DrawText("[2] HARD - Standard Operations", 576, 390, 36, ORANGE);
-    DrawText("[3] HELL - High Density / Elite Enemies", 576, 460, 36, RED);
-    DrawText("Press key to deploy...", 720, 620, 27, DARKGRAY);
+    DrawText("Select Difficulty Level:", 585, 250, 52, GRAY);
+    DrawText("[1] EASY - Low Density / Weak Enemies", 435, 390, 46, GREEN);
+    DrawText("[2] HARD - Standard Operations", 535, 485, 46, ORANGE);
+    DrawText("[3] HELL - High Density / Elite Enemies", 425, 580, 46, RED);
+    DrawText("Press key to deploy...", 735, 735, 34, DARKGRAY);
     EndDrawing();
 }
 
@@ -189,7 +189,7 @@ int main() {
     float spawnTimer = 0.0f;
     float hpSpawnTimer = 0.0f;
     bool isPaused = false;
-    Rectangle pauseButton = { 740, 10, 50, 50 };
+    Rectangle pauseButton = { 1850, 10, 50, 50 };
     float gameTimer = 0.0f;
     int currentDiffID = -1;
     bool gameStarted = false;
@@ -369,35 +369,28 @@ int main() {
         DrawRectangleLines(expBarX, expBarY, expBarWidth, expBarHeight, WHITE);
 
         DrawText(TextFormat("EXP: %d/%d", player.getExp(), player.getExpToNextLevel()), 792, 1004, 36, SKYBLUE);
-        
-        DrawText(TextFormat("Score: %d", player.getScore()), 10, 80, 20, WHITE);
-        // Format time as MM:Ss
-        int mins = (int)(gameTimer / 60);
-        int secs = (int)(gameTimer) % 60;
-        // Display survival time in MM:SS format
-        DrawText(TextFormat("Time: %02d:%02d", mins, secs), 330, 20, 25, WHITE);
       
         DrawRectangleRec(pauseButton, DARKGRAY);
-        DrawText("||", pauseButton.x + 18, pauseButton.y + 10, 30, WHITE);
+        DrawText("||", pauseButton.x, pauseButton.y , 30, WHITE);
 
         // Náº¾U ÄANG PAUSE THĂŒ Váº¼ Báº¢NG MENU
         if (isPaused) {
             // Váº½ lá»›p ná»n má» Ä‘Ă¨ lĂªn game
-            DrawRectangle(0, 0, 800, 600, Fade(BLACK, 0.6f));
+            DrawRectangle(0, 0, 1920, 1040, Fade(BLACK, 0.6f));
 
             // Váº½ cĂ¡i báº£ng Menu á»Ÿ giá»¯a
-            DrawRectangle(250, 150, 300, 300, RAYWHITE);
-            DrawText("GAME PAUSED", 310, 180, 30, BLACK);
+            DrawRectangle(660, 250, 600, 420, RAYWHITE);
+            DrawText("GAME PAUSED", 765, 310, 54, BLACK);
 
             // NĂºt RESUME
-            Rectangle resumeBtn = { 300, 250, 200, 50 };
+            Rectangle resumeBtn = { 760, 410, 400, 80 };
             DrawRectangleRec(resumeBtn, LIGHTGRAY);
-            DrawText("RESUME", 355, 265, 20, BLACK);
+            DrawText("RESUME", 870, 432, 36, BLACK);
 
             // NĂºt EXIT
-            Rectangle exitBtn = { 300, 330, 200, 50 };
+            Rectangle exitBtn = { 760, 530, 400, 80 };
             DrawRectangleRec(exitBtn, RED);
-            DrawText("EXIT", 375, 345, 20, WHITE);
+            DrawText("EXIT", 915, 552, 36, WHITE);
 
             // Check click vĂ o cĂ¡c nĂºt trong Menu
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
