@@ -33,6 +33,7 @@ struct SkillProjectile {
     Color color;
     int type;
     float angle;
+    int remainingBounces;
 };
 
 class Skill {

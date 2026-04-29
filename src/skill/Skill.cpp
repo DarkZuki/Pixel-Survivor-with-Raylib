@@ -1,11 +1,28 @@
 #include "Skill.h"
 #include "SkillLevel.h"
 #include "raymath.h"
+#include <cfloat>
 
 namespace {
 // Chuan hoa huong bay, neu vector rong thi tra ve huong mac dinh
 Vector2 NormalizeOrFallback(Vector2 direction) {
     return Vector2Length(direction) > 0.0f ? Vector2Normalize(direction) : Vector2{1.0f, 0.0f};
+}
+
+Enemy* FindNearestEnemy(const Vector2& from, const std::vector<Enemy*>& enemies) {
+    Enemy* nearest = nullptr;
+    float bestDistance = FLT_MAX;
+
+    for (Enemy* enemy : enemies) {
+        if (!enemy || enemy->getHp() <= 0) continue;
+        float distance = Vector2Distance(from, {(float)enemy->getX(), (float)enemy->getY()});
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            nearest = enemy;
+        }
+    }
+
+    return nearest;
 }
 }
 
@@ -100,8 +117,8 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
                     if (CheckCollisionCircleLine(enemyPos, 30.0f, playerPos, end)) enemy->takeDamage(totalDamage);
                     if (stats.special && CheckCollisionCircleLine(enemyPos, 20.0f, playerPos, back)) enemy->takeDamage(totalDamage);
                 }
-                projectiles.push_back({playerPos, Vector2Scale(dir, stats.range), 0.2f, stats.effectRadius, 0.0f, SKYBLUE, 0, 0.0f});
-                if (stats.special) projectiles.push_back({playerPos, Vector2Scale(dir, -stats.range), 0.2f, stats.effectRadius, 0.0f, SKYBLUE, 0, 0.0f});
+                projectiles.push_back({playerPos, Vector2Scale(dir, stats.range), 0.2f, stats.effectRadius, 0.0f, SKYBLUE, 0, 0.0f, 0});
+                if (stats.special) projectiles.push_back({playerPos, Vector2Scale(dir, -stats.range), 0.2f, stats.effectRadius, 0.0f, SKYBLUE, 0, 0.0f, 0});
             }
             break;
 
@@ -115,7 +132,7 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
                 int index = GetRandomValue(0, (int)targets.size() - 1);
                 Enemy* enemy = targets[index];
                 enemy->takeDamage(totalDamage);
-                projectiles.push_back({{(float)enemy->getX(), (float)enemy->getY()}, {0, 0}, 0.25f, stats.effectRadius, 0.0f, YELLOW, 1, 0.0f});
+                projectiles.push_back({{(float)enemy->getX(), (float)enemy->getY()}, {0, 0}, 0.25f, stats.effectRadius, 0.0f, YELLOW, 1, 0.0f, 0});
                 targets.erase(targets.begin() + index);
             }
             break;
@@ -133,7 +150,7 @@ void Skill::attack(const std::vector<Enemy*>& enemies) {
                 for (int i = 0; i < stats.count; i++) {
                     float angle = skillType == SKILL_SHIELD ? 2.0f * PI * i / stats.count : ((float)(i - stats.count / 2) * 8.0f + (stats.count % 2 == 0 ? 4.0f : 0.0f)) * DEG2RAD;
                     Vector2 velocity = Vector2Rotate(dir, angle);
-                    projectiles.push_back({playerPos, {velocity.x * stats.speed, velocity.y * stats.speed}, skillType == SKILL_SHIELD ? 1.2f : 1.5f, stats.effectRadius, (float)(totalDamage + (skillType == SKILL_HAMMER && stats.special ? 20 : 0)), skillType == SKILL_SHIELD ? BLUE : ORANGE, skillType == SKILL_SHIELD ? 2 : 3, skillType == SKILL_SHIELD ? angle * RAD2DEG : 0.0f});
+                    projectiles.push_back({playerPos, {velocity.x * stats.speed, velocity.y * stats.speed}, skillType == SKILL_SHIELD ? 1.2f : 1.5f, stats.effectRadius, (float)(totalDamage + (skillType == SKILL_HAMMER && stats.special ? 20 : 0)), skillType == SKILL_SHIELD ? BLUE : ORANGE, skillType == SKILL_SHIELD ? 2 : 3, skillType == SKILL_SHIELD ? angle * RAD2DEG : 0.0f, skillType == SKILL_SHIELD ? 3 : 0});
                 }
             }
             break;
@@ -182,6 +199,16 @@ void updateSkillProjectiles(std::vector<SkillProjectile>& projectiles, std::vect
     // Duyet nguoc de xoa projectile an toan trong luc update
     for (int i = (int)projectiles.size() - 1; i >= 0; i--) {
         SkillProjectile& projectile = projectiles[i];
+        if (projectile.type == 2) {
+            // Shield tu dong doi huong ve enemy gan nhat trong moi frame
+            Enemy* target = FindNearestEnemy(projectile.position, enemies);
+            if (target) {
+                float speed = Vector2Length(projectile.velocity);
+                Vector2 desiredDirection = NormalizeOrFallback(Vector2Subtract({(float)target->getX(), (float)target->getY()}, projectile.position));
+                projectile.velocity = Vector2Scale(desiredDirection, speed);
+                projectile.angle = atan2f(projectile.velocity.y, projectile.velocity.x) * RAD2DEG;
+            }
+        }
         projectile.position.x += projectile.velocity.x * dt;
         projectile.position.y += projectile.velocity.y * dt;
         projectile.lifeTime -= dt;
@@ -189,9 +216,27 @@ void updateSkillProjectiles(std::vector<SkillProjectile>& projectiles, std::vect
         if (projectile.damage > 0.0f) {
             // Projectile gay damage se bien mat sau khi cham enemy
             for (Enemy* enemy : enemies) {
-                if (enemy && CheckCollisionCircles(projectile.position, projectile.radius, {(float)enemy->getX(), (float)enemy->getY()}, 10.0f)) {
+                if (enemy && enemy->getHp() > 0 && CheckCollisionCircles(projectile.position, projectile.radius, {(float)enemy->getX(), (float)enemy->getY()}, 10.0f)) {
                     enemy->takeDamage((int)projectile.damage);
-                    projectile.lifeTime = 0.0f;
+                    if (projectile.type == 2) {
+                        // Shield chi duoc nay 3 lan, moi lan cham se doi muc tieu gan nhat tiep theo
+                        projectile.remainingBounces--;
+                        if (projectile.remainingBounces <= 0) {
+                            projectile.lifeTime = 0.0f;
+                            break;
+                        }
+                        Vector2 enemyPos = {(float)enemy->getX(), (float)enemy->getY()};
+                        Enemy* nextTarget = FindNearestEnemy(enemyPos, enemies);
+                        Vector2 bounceDir = nextTarget && nextTarget != enemy
+                            ? NormalizeOrFallback(Vector2Subtract({(float)nextTarget->getX(), (float)nextTarget->getY()}, enemyPos))
+                            : NormalizeOrFallback(Vector2Subtract(projectile.position, enemyPos));
+                        float speed = Vector2Length(projectile.velocity);
+                        projectile.velocity = Vector2Scale(bounceDir, speed);
+                        projectile.position = Vector2Add(enemyPos, Vector2Scale(bounceDir, projectile.radius + 12.0f));
+                        projectile.angle = atan2f(projectile.velocity.y, projectile.velocity.x) * RAD2DEG;
+                    } else {
+                        projectile.lifeTime = 0.0f;
+                    }
                     break;
                 }
             }
