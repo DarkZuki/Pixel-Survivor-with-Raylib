@@ -85,9 +85,9 @@ int main() {
     while (!WindowShouldClose()) {
       if (!gameStarted){
             // dùng phím chọn qua chế độ chơi nào
-            if (IsKeyPressed(KEY_ONE))   { currentDiffID = 0; gameStarted = true; waveSystem.skipToWave(20);}
+            if (IsKeyPressed(KEY_ONE))   { currentDiffID = 0; gameStarted = true; }
             if (IsKeyPressed(KEY_TWO))   { currentDiffID = 1; gameStarted = true; }
-            if (IsKeyPressed(KEY_THREE)) { currentDiffID = 2; gameStarted = true; }
+            if (IsKeyPressed(KEY_THREE)) { currentDiffID = 2; gameStarted = true;  waveSystem.skipToWave(20);}
             if (gameStarted){
                 waveSystem.setDifficulty(currentDiffID); 
             }
@@ -217,9 +217,23 @@ int main() {
         updateProjectiles(weaponProjectiles, enemies, dt);
         
         // Update
-        for (auto e : entities) e->update();
-        // RANGED ENEMY LOGIC (Type 3)
-            enemyFireTimer += dt;
+        for (auto e : entities) {
+            // kiểm tra nếu không phải enemy thì update ở đây
+            bool isEnemy = false;
+            for(auto enemyPtr : enemies) {
+                if (e == (Entity*)enemyPtr) {
+                    isEnemy = true;
+                    break;
+                }
+            }
+            if(!isEnemy)  e->update();
+        }
+        for (auto e : enemies) {
+            // update riêng cho enemy
+            e->update(enemies);
+        }
+         // RANGED ENEMY LOGIC (Type 3)
+        enemyFireTimer += dt;
         for (auto e : enemies) {
             if (e->getEnemyType() == 3 && e->canShoot()) { 
                 int bulletDmg = e->getDamage();

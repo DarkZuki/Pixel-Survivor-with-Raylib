@@ -21,11 +21,13 @@ Enemy::Enemy(Player* p, int type, Texture2D* tex) : player(p), texture(tex), ene
     }
 }
 
-void Enemy::update() {
+void Enemy::update(const std::vector<Enemy*>& allEnemies) {
     // Move towards player
     float dx = player->getX() - x;
     float dy = player->getY() - y;
     float dist = sqrt(dx*dx + dy*dy);
+    float moveX =0;
+    float moveY = 0;
     
     if (dist > 0.1f) {
         // tạo logic dùng lại để bắn của quái RANGED
@@ -33,13 +35,39 @@ void Enemy::update() {
             // đã vào tầm bắn , tự động  nạp đạn
             fireTimer +=GetFrameTime();
         } else {
-        x += (dx / dist) * speed;
-        y += (dy / dist) * speed;
+        moveX += (dx / dist) * speed;
+        moveY += (dy / dist) * speed;
         fireTimer = 0.0f;
         }
         // cập nhật góc quay
         rotation = (dx < 0) ? -1.0f : 1.0f;
     }
+    if (!allEnemies.empty()) {
+        float sepX = 0, sepY = 0;
+        // khoang cach gioi han da duoc cai dat
+        float space = 55.0f;
+        for (auto other : allEnemies) {
+            if (other == this) continue;
+            float diffX = x - other->getX();
+            float diffY = y - other->getY();
+            float distSq = diffX*diffX + diffY*diffY;
+            if (distSq > 0 && distSq < space * space) {
+                float d = sqrt(distSq);
+                sepX += (diffX / d) * (space - d) * 0.1f;
+                sepY += (diffY / d) * (space - d) * 0.1f;
+            }
+        }
+        moveX += sepX;
+        moveY += sepY;
+    }
+
+    // 3. Cập nhật vị trí cuối cùng
+    x += moveX;
+    y += moveY;
+}
+void Enemy::update(){
+    std::vector<Enemy*> emptyList;
+    update(emptyList);
 }
 // kiem tra dieu kien ra dan cua quai RANGED
 bool Enemy::canShoot(){

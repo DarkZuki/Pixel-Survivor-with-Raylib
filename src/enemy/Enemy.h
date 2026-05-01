@@ -28,6 +28,8 @@ public:
     //Constructor
     Enemy(Player* p, int type, Texture2D* tex);
     void update() override;
+    // tạo hàm để quái né nhau
+    void update(const std::vector<Enemy*>& allEnemies);
     void draw() override;
     bool canShoot();
     
