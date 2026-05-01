@@ -6,9 +6,12 @@ class Bullet : public Entity {
 private:
     float vx, vy;
     float speed = 5.0f;
+    // false nếu là đạn ng chơi
+    bool isEnemyBullet = false;
+    int damage;
 public:
     //Constructor
-    Bullet(float sx, float sy, float tx, float ty);
+    Bullet(float sx, float sy, float tx, float ty, int dmg);
     void update() override;
     void draw() override;
     
@@ -16,9 +19,12 @@ public:
     float getVelX() const { return vx; }
     float getVelY() const { return vy; }
     float getSpeed() const { return speed; }
+    bool getIsEnemyBullet() const { return isEnemyBullet; }
+    int getDamage() { return damage; }
     
     // Setters
     void setVelocity(float newVx, float newVy) { vx = newVx; vy = newVy; }
     void setSpeed(float newSpeed) { speed = newSpeed; }
+    void setIsEnemyBullet(bool enemyBullet) { isEnemyBullet = enemyBullet; }
 
 };

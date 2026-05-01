@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 class Entity {
 protected:
@@ -21,3 +22,5 @@ public:
     void setPosition(float newX, float newY) { x = newX; y = newY; }
 
 };
+
+void removeEntity(std::vector<Entity*>& entities, Entity* entity);

@@ -3,6 +3,10 @@
     {
       "name": "windows-gcc-x64",
       "includePath": [
+<<<<<<< HEAD
+=======
+        "C:/raylib/raylib/src",
+>>>>>>> 96926ed679389cb6dfd61c371019e3ee39de0d76
         "${workspaceFolder}/**"
       ],
       "defines": [
@@ -15,8 +19,12 @@
       "compilerPath": "C:/msys64/ucrt64/bin/gcc.exe",
       "cStandard": "${default}",
       "cppStandard": "${default}",
+<<<<<<< HEAD
       "intelliSenseMode": "windows-gcc-x64",
       "configurationProvider": "ms-vscode.makefile-tools"
+=======
+      "intelliSenseMode": "windows-gcc-x64"
+>>>>>>> 96926ed679389cb6dfd61c371019e3ee39de0d76
     },
     {
       "name": "Mac",
@@ -58,4 +66,8 @@
     }
   ],
   "version": 4
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 96926ed679389cb6dfd61c371019e3ee39de0d76

@@ -60,8 +60,13 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
+<<<<<<< HEAD
       "cwd": "d:/Pixel-Survivor-with-Raylib/src/boss",
       "program": "d:/Pixel-Survivor-with-Raylib/src/boss/build/Debug/outDebug",
+=======
+      "cwd": "d:/Pixel-Survivor-with-Raylib/src",
+      "program": "d:/Pixel-Survivor-with-Raylib/src/build/Debug/outDebug",
+>>>>>>> 96926ed679389cb6dfd61c371019e3ee39de0d76
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
