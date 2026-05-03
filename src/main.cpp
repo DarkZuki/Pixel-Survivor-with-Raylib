@@ -20,7 +20,7 @@ using namespace std;
 // Tai sprite cho 5 loai enemy vao mang dung chung
 void loadEnemySprites(Texture2D sprites[]) {
     const char* paths[5] = {
-        "Graphics/Ultron-Perler-Bead-Pattern-removebg-preview.png",
+        "Graphics/NormalWalk.png",
         "Graphics/Venom-removebg-preview.png",
         "Graphics/Supreme-Leader-Ultron-removebg-preview.png",
         "Graphics/Loki-removebg-preview.png",

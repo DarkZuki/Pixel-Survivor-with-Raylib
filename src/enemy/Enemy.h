@@ -24,6 +24,12 @@ protected:
     float fireTimer = 0.0f;
     // cài damage mặc định 
     int damage = 1;
+    Texture2D EnemyTexture = {0};
+    Texture2D EnemyWalkTexture = {0};
+    int walkFrame = 0;      // Khung hình hiện tại (0-7)
+    float walkTimer = 0.0f; // Bộ đếm thời gian chuyển khung
+    bool isWalking = false; // Trạng thái có đang di chuyển không
+    int totalFrames = 8;    // Tổng số khung hình trên tấm ảnh 
 public:
     //Constructor
     Enemy(Player* p, int type, Texture2D* tex);
