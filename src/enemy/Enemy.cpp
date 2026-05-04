@@ -76,7 +76,7 @@ bool Enemy::canShoot(){
 
 void Enemy::draw() {
     if (texture !=nullptr){
-        float targetSize = 150.0f;
+        float targetSize = 170.0f;
         // Mặc định cho các loại quái khác (vẽ nguyên tấm ảnh)
         float frameWidth = (float)texture->width;
         float frameHeight = (float)texture->height;
