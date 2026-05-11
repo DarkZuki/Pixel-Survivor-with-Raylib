@@ -24,6 +24,10 @@ protected:
     float fireTimer = 0.0f;
     // cài damage mặc định 
     int damage = 1;
+    int frameCount;      // Số lượng frame của loại quái này
+    int currentFrame;    // Frame hiện tại (0, 1, 2...)
+    float frameTimer;    // Bộ đếm thời gian để chuyển frame
+    float frameSpeed;    // Tốc độ chuyển frame (giây)
 public:
     //Constructor
     Enemy(Player* p, int type, Texture2D* tex);
@@ -58,6 +62,11 @@ public:
     void setHp(int newHp) { hp = newHp; }
     void setSpeed(float newSpeed) { speed = newSpeed; }
     void setDamage(int d) { damage = d; }
+    void setAnimation(int frames, float speed) {
+        this->frameCount = frames;
+        this->frameSpeed = speed;
+    }
+    void setFrameCount(int count) { this->frameCount = count; }
     virtual void takeDamage(int damage) { hp -= damage; }
     virtual ~Enemy() {}
     

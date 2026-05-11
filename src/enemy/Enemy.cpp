@@ -2,6 +2,10 @@
 #include "raymath.h"
 
 Enemy::Enemy(Player* p, int type, Texture2D* tex) : player(p), texture(tex), enemyType(type) {
+    currentFrame = 0;
+    frameTimer = 0.0f;
+    frameSpeed = 0.1f; // Mặc định 0.1s chuyển 1 frame
+    frameCount = 1;    // Mặc định là 1 (nếu chưa set)
     // Set hp and speed based on enemy type
     if (type == 0) { // NORMAL
         hp = 30;
@@ -37,6 +41,13 @@ void Enemy::update() {
         y += step.y;
         fireTimer = 0.0f;
         }
+        if (frameCount > 1) {
+        frameTimer += GetFrameTime();
+        if (frameTimer >= frameSpeed) {
+            frameTimer = 0.0f;
+            currentFrame = (currentFrame + 1) % frameCount;
+           }
+        }
         // cập nhật góc quay
         rotation = (direction.x < 0) ? -1.0f : 1.0f;
     }
@@ -53,8 +64,9 @@ bool Enemy::canShoot(){
 void Enemy::draw() {
     if (texture !=nullptr){
         float targetSize = 70.0f;
+        float frameWidth = (float)texture->width / frameCount;
         // tạo cấu hình vùng ảnh
-        Rectangle source = { 0.0f, 0.0f, (float)texture->width* rotation, (float)texture->height };
+        Rectangle source = { frameWidth * currentFrame, 0.0f, frameWidth * rotation, (float)texture->height };
         // tạo cấu hình vùng va chạm
         Rectangle dest = { x, y, targetSize, targetSize };
         // thiết lập điểm gốc (tâm hình chữ nhật) để tính góc xoay từ tâm
