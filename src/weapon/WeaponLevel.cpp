@@ -1,4 +1,4 @@
-#include "level.h"
+#include "WeaponLevel.h"
 
 // Hàm set chỉ số cơ bản ban đầu ko thể thay đổi
 const WeaponStats BASE_STATS[] = {

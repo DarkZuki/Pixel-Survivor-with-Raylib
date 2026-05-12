@@ -1,296 +1,83 @@
-# PIXEL SURVIVOR - Year 2 University Project
+# Arcane Rampage
 
-A 2D survivor game with **skills, weapons, leveling, enemy types, rarity system, difficulty modes, and a menu** - built by 4 electronics/telecom students in 3 weeks.
+## Giới thiệu đề tài
 
-**Learning**: Basic OOP (inheritance, polymorphism, enums) + Simple DSA (vectors, arrays)
+`Arcane Rampage` là game sinh tồn 2D được phát triển bằng C++ với thư viện Raylib. Trong game, người chơi điều khiển nhân vật chiến đấu với các đợt quái xuất hiện liên tục, thu thập kinh nghiệm để tăng cấp và lựa chọn nâng cấp trong quá trình chơi.
 
----
+Dự án được tổ chức theo từng hệ thống riêng như người chơi, quái, boss, vũ khí, kỹ năng, vật phẩm, wave và nâng cấp. Mỗi phần đảm nhiệm một nhóm chức năng cụ thể để tạo thành vòng lặp gameplay hoàn chỉnh.
 
-## 🎮 Game Features
+## Mô tả cách chơi
 
-### ⚔️ Skills System (2 types, max 4 active)
-- **Auto Aura**: Automatically attacks around player
-- **Key Activated**: Triggers on key press (1-4 keys)
-- **Leveling**: Skills can level up (1-4 max)
-- **Effects**: Damage, speed, cooldown, projectile count
+Khi bắt đầu, game hiển thị màn hình tiêu đề. Người chơi nhấn `Space` để vào phần chọn độ khó, sau đó chọn bằng phím `1`, `2` hoặc `3`.
 
-### 🔫 Weapons System
-- **4+ Weapons**: Gun, Sword, Laser, Shotgun
-- **Rarity Drops**: Common, Rare, Epic (affects damage/firerate)
-- **Weapon Switching**: Press E to switch
-- **Different Mechanics**: Each weapon fires differently
+Sau khi vào trận, người chơi di chuyển nhân vật trên bản đồ, né tránh quái và tấn công để sống sót qua từng wave. Quái bị tiêu diệt sẽ rơi ra vật phẩm kinh nghiệm hoặc vật phẩm hồi máu. Khi nhận đủ kinh nghiệm, người chơi tăng cấp và hệ thống sẽ mở menu nâng cấp để chọn thêm vũ khí mới, kỹ năng mới hoặc tăng cấp những gì đang có.
 
-### 👾 Enemy System
-- **4 Enemy Types**: Normal, Fast, Tank, Ranged
-- **Stat Variation**: Different HP, speed, behavior
-- **Rarity Drops**: Drop better loot when rare/epic
-- **Visual Difference**: Size/color indicates type
+Độ khó của game tăng dần theo thời gian và theo wave. Ở các giai đoạn sau, số lượng quái nhiều hơn, chỉ số mạnh hơn và cuối cùng sẽ xuất hiện boss ở wave cuối. Người chơi chiến thắng khi vượt qua wave cuối và tiêu diệt boss.
 
-### 🌟 Rarity System
-- **Common**: Normal stats, white color
-- **Rare**: +50% stats, blue color
-- **Epic**: +100% stats, purple color
-- Applies to: Weapons, Skills, Enemies
+## Thành phần chính trong game
 
-### 📊 Leveling & Progression
-- **Skill Levels**: 1-4 (player can choose which to level)
-- **Player HP**: Increases with level
-- **Damage Growth**: +5% per level
-- **Stat Increases**: Level up through enemy kills
+- Người chơi có thể di chuyển, nhận sát thương, tăng cấp và tích lũy điểm số
+- Hệ thống quái gồm nhiều loại khác nhau, bao gồm quái thường, quái đánh xa và boss
+- Vũ khí có thể được mở khóa và nâng cấp trong trận
+- Kỹ năng hỗ trợ chiến đấu được mở khóa thông qua hệ thống nâng cấp
+- Wave quyết định nhịp độ spawn quái và mức độ khó của trận đấu
+- Vật phẩm giúp hồi máu hoặc cộng kinh nghiệm cho người chơi
 
-### ⚙️ Difficulty System (3 preset modes)
-- **Easy**: Slow spawn, weak enemies, more player HP
-- **Normal**: Balanced challenge
-- **Hard**: Fast spawn, strong enemies, less player HP
-- Set from **main menu** before starting
+## Điều khiển
 
-### 📱 Main Menu
-- **Start Game**: Launch with selected difficulty
-- **Settings**: Choose difficulty (Easy/Normal/Hard)
-- **Clean UI**: Simple text buttons
+- `W`, `A`, `S`, `D`: di chuyển nhân vật
+- `Chuột trái`: tấn công bằng vũ khí hiện tại
+- `1`, `2`: chuyển giữa các ô vũ khí đang trang bị
+- `Esc`: tạm dừng hoặc tiếp tục game
+- `Space`: bắt đầu từ màn hình tiêu đề
+- `1`, `2`, `3`: chọn độ khó trước khi vào trận
 
-### 🎮 Core Mechanics
-- Player movement (WASD) + aiming
-- Click to fire main weapon
-- Skill keys (1-4) to activate skills
-- Press E to switch weapons
-- Dodge incoming enemies
-- Survive as long as possible!
+## Cấu trúc thư mục chính
 
----
-
-## 📁 Code Structure
-
-```
+```text
 src/
-├── main.cpp              # Game loop + state management
-├── core/
-│   └── Entity.h          # Base class for all game objects
-├── player/
-│   ├── Player.h/.cpp     # Player class
-│   └── Skill.h/.cpp      # NEW: Skill system
-├── weapon/
-│   └── Weapon.h/.cpp     # NEW: Weapon system
-├── enemy/
-│   ├── Enemy.h/.cpp      # Modified: Enemy types
-│   └── EnemyType.h       # NEW: Enums for types
-├── ui/
-│   ├── Menu.h/.cpp       # NEW: Main menu
-│   └── HUD.h/.cpp        # NEW: Game UI display
-├── bullet/
-│   └── Bullet.h/.cpp     # Bullet projectiles
-└── skill/
-    └── Skill.h/.cpp      # (also used in player folder)
+|- main.cpp
+|- boss/
+|- bullet/
+|- core/
+|- enemy/
+|- Item/
+|- player/
+|- skill/
+|- upgrade/
+|- wave/
+`- weapon/
 ```
 
----
+## Build và chạy
 
-## 🚀 How to Build & Run
+### Yêu cầu
+
+- Trình biên dịch C++ hỗ trợ C++14
+- Raylib
+- `make` hoặc `mingw32-make`
+- Visual Studio Code nếu muốn dùng task có sẵn trong `.vscode/`
+
+### Build bằng VS Code
+
+- Chạy task `build debug`
+- Chạy task `build release`
+- Nhấn `F5` để build và chạy với cấu hình debug
+
+### Build bằng dòng lệnh trên Windows
 
 ```bash
-# Build debug version
-Ctrl+Shift+P → Run Task → "build debug"
-
-# Or press F5 to build and run
-
-# Build release version  
-Ctrl+Shift+P → Run Task → "build release"
+C:/raylib/w64devkit/bin/mingw32-make.exe RAYLIB_PATH=C:/raylib/raylib PROJECT_NAME=main BUILD_MODE=DEBUG
 ```
 
----
+## Tài nguyên sử dụng
 
-## 📋 Project Timeline (3 Weeks)
+Game hiện nạp tài nguyên từ các thư mục:
 
-### Week 1: Core Systems (24-40 hours)
-- [ ] Skill class with 2 types & leveling
-- [ ] Weapon class with rarity
-- [ ] 4 enemy types implementation
-- [ ] Main menu setup
+- `Graphics/`
+- `Sounds/`
 
-### Week 2: Game Mechanics (24-40 hours)
-- [ ] Skill level-up system
-- [ ] Weapon switching & drops
-- [ ] 3 difficulty levels
-- [ ] Player HP/stat growth
+## Ghi chú
 
-### Week 3: Polish (24-40 hours)
-- [ ] Testing & bug fixes
-- [ ] Balancing skills/weapons/enemies
-- [ ] Visual feedback & UI
-- [ ] Code documentation
-
-**Total**: ~75 hours for 4 people ÷ 4 = ~19 hours per person (spread over 3 weeks ✅)
-
-See `TASK_BREAKDOWN.md` for detailed task distribution.
-
----
-
-## 🎓 Learning Concepts
-
-### Object-Oriented Programming ✅
-- **Classes & Inheritance**: `Entity` → `Player`, `Enemy`, `Skill`, `Weapon`
-- **Polymorphism**: Virtual `update()` and `draw()` methods
-- **Encapsulation**: Private data, public getters/setters
-- **Enums**: `SkillType`, `WeaponType`, `EnemyType`, `Rarity`, `Difficulty`
-- **Composition**: Player HAS skills, HAS weapon, HAS stats
-
-### Data Structures & Algorithms ✅
-- **Arrays**: `skills[4]` for max 4 skills
-- **Vectors**: Dynamic storage of enemies, bullets, weapons
-- **Enums**: Discrete type values
-- **Structs**: `DifficultyStats` grouping related data
-- **Dynamic Memory**: `new`/`delete` for game objects
-- **Collision Detection**: Circle-based collision algorithm
-
----
-
-## 👥 Team Roles
-
-| Person | Week 1 | Week 2 | Week 3 |
-|--------|--------|--------|--------|
-| A | Skill class | Skill leveling | Testing |
-| B | Weapon class | Weapon switching | Balancing |
-| C | Enemy types | Difficulty levels | UI/Visual |
-| D | Main menu | Player HP system | Documentation |
-
-**All work in parallel** - tasks are independent!
-
----
-
-## 💻 Tech Stack
-
-- **Language**: C++17
-- **Graphics**: Raylib 5.0
-- **Compiler**: MinGW (GCC)
-- **IDE**: Visual Studio Code
-- **OS**: Windows 10/11
-
----
-
-## 📊 Code Metrics
-
-| Metric | Target | Status |
-|--------|--------|--------|
-| Total Lines | < 1000 | ✅ |
-| New Classes | 6-8 | ✅ |
-| Inheritance Depth | 2 levels | ✅ |
-| Vector Usage | Yes | ✅ |
-| Enum Usage | Yes | ✅ |
-| Comments | Basic but clear | ✅ |
-
----
-
-## 🎮 Game Balance
-
-### Skills
-```
-Level 1: Base damage = 10
-Level 2: 10 * 1.2 = 12 damage
-Level 3: 10 * 1.4 = 14 damage
-Level 4: 10 * 1.6 = 16 damage
-
-Rarity multipliers:
-Common = 1.0x, Rare = 1.5x, Epic = 2.0x
-```
-
-### Weapons
-```
-Gun (balanced)
-- Damage: 15, FireRate: 0.5 sec
-
-Sword (fast)
-- Damage: 20, FireRate: 0.2 sec
-
-Shotgun (powerful)
-- Damage: 40 (5 bullets), FireRate: 1.0 sec
-
-Laser (precise)
-- Damage: 25, FireRate: 0.3 sec
-```
-
-### Enemies
-```
-Normal: HP 30, Speed 1.0
-Fast:   HP 15, Speed 2.0
-Tank:   HP 100, Speed 0.5
-Ranged: HP 40, Speed 1.5
-```
-
----
-
-## 🔧 Building & Debugging
-
-**Build Commands**:
-```
-make RAYLIB_PATH=C:/raylib/raylib PROJECT_NAME=main OBJS=src/*.cpp BUILD_MODE=DEBUG
-```
-
-**Debugging Tips**:
-- Press Ctrl+Shift+D in VS Code to attach debugger
-- Set breakpoints by clicking line numbers
-- Check console output for errors
-
----
-
-## 📝 Code Quality
-
-- ✅ Classes properly encapsulated
-- ✅ Virtual functions used correctly
-- ✅ Vectors managed with smart memory allocation
-- ✅ Collision detection working
-- ✅ No memory leaks (delete all new'd objects)
-- ✅ Code commented and organized
-
----
-
-## 🎯 Success Criteria
-
-For your teacher:
-- ✅ Game runs without crashes (5-10 min gameplay)
-- ✅ All 3 difficulties working
-- ✅ Skills, weapons, enemies all implement
-- ✅ Menu system working
-- ✅ Code shows OOP understanding (inheritance, polymorphism)
-- ✅ Code shows DSA understanding (vectors, enums, dynamic memory)
-- ✅ Clean, documented code
-- ✅ Balanced and fun gameplay
-
----
-
-## 💡 Pro Tips
-
-1. **Test constantly** - Don't wait until week 3
-2. **Keep it simple** - Resist feature creep
-3. **Balance matters** - Playtest and adjust numbers
-4. **Comment as you go** - Don't leave for week 3
-5. **Use git branches** - One per task, merge when done
-6. **Help each other** - Team of 4 is your strength!
-7. **Version control** - Commit every 30 minutes
-
----
-
-## 🚀 Getting Started
-
-1. Read `TASK_BREAKDOWN.md` for detailed task descriptions
-2. Each person picks a Week 1 task
-3. Follow the code examples provided
-4. Keep classes under 150 lines each
-5. Test as you build
-
----
-
-## 📚 Resources
-
-- Raylib Documentation: https://www.raylib.com/
-- C++ Enums: https://en.cppreference.com/w/cpp/language/enum
-- OOP Concepts: https://en.cppreference.com/w/cpp/language/class
-- Vector Reference: https://en.cppreference.com/w/cpp/container/vector
-
----
-
-**Project Start**: Week 1  
-**Project End**: Week 3  
-**Status**: 🔨 In Development
-
-**Good luck! You've got this! 🎮**
-
+- Cửa sổ game hiện được khởi tạo với kích thước `1920 x 1040`
+- Tên hiển thị của cửa sổ game hiện tại là `Arcane Rampage`

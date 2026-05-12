@@ -1,5 +1,5 @@
-#ifndef WEAPON_LEVEL_H
-#define WEAPON_LEVEL_H
+#ifndef WEAPON_WEAPONLEVEL_H
+#define WEAPON_WEAPONLEVEL_H
 
 #include <string>
 #include "weapon.h"
@@ -23,4 +23,4 @@ const char* getWeaponLevelWeaponName(int weaponType);
 WeaponLevel getWeaponLevelData(int weaponType, int level);
 WeaponStats getWeaponStats(int weaponType, int weaponLevel);
 
-#endif // WEAPON_LEVEL_H
+#endif // WEAPON_WEAPONLEVEL_H

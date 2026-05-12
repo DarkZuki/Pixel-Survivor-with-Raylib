@@ -1,5 +1,5 @@
 #include "UpgradeSystem.h"
-#include "../weapon/level.h"
+#include "../weapon/WeaponLevel.h"
 #include "../skill/SkillLevel.h"
 
 void UpgradeSystem::showUpgradeMenu(std::vector<Weapon*>& weapons, std::vector<Skill*>& skills,
