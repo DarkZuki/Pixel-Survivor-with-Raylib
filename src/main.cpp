@@ -392,6 +392,10 @@ int main() {
                 removeEnemy(entities, enemies, i);
             }
         }
+        if (IsKeyPressed(KEY_L)) { // Nhấn phím L để lên cấp
+            player.addExp(player.getExpToNextLevel());
+            shouldShowUpgrade = true;
+        }
 
         // Ve world truoc, UI sau de UI khong bi camera keo theo
         BeginDrawing();
@@ -484,9 +488,7 @@ int main() {
             DrawText(skillInventory[2]->getName(), skillSlot3.x + 8, skillSlot3.y + 50, 18, WHITE);
         }
 
-         // NĂ¡ÂºÂ¾U Ă„ÂANG PAUSE THÄ‚Å’ VĂ¡ÂºÂ¼ BĂ¡ÂºÂ¢NG MENU
         if (isPaused) {
-            // VĂ¡ÂºÂ½ lĂ¡Â»â€ºp nĂ¡Â»Ân mĂ¡Â»Â Ă„â€˜Ä‚Â¨ lÄ‚Âªn game
             DrawRectangle(0, 0, 1920, 1040, Fade(BLACK, 0.6f));
 
             // VĂ¡ÂºÂ½ cÄ‚Â¡i bĂ¡ÂºÂ£ng Menu Ă¡Â»Å¸ giĂ¡Â»Â¯a

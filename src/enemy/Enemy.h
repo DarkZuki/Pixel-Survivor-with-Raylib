@@ -43,18 +43,18 @@ public:
     Player* getPlayer() const { return player; }
     int getExpReward() {
         switch(enemyType){
-            case 1 : return 15; // FAST
-            case 2 : return 30; // TANK
-            case 3 : return 25; // RANGED
-            default: return 10; // NORMAL
+            case 1 : return 1500; // FAST
+            case 2 : return 3000; // TANK
+            case 3 : return 2500; // RANGED
+            default: return 1000; // NORMAL
         }
     }
     int getScoreReward() {
         switch(enemyType) {
-            case 1 : return 15;
-            case 2 : return 25;
-            case 3 : return 20;
-            default: return 10;
+            case 1 : return 1500;
+            case 2 : return 3000;
+            case 3 : return 2500;
+            default: return 1000;
         }
     }
     
