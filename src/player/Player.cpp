@@ -28,7 +28,7 @@ int Player::getExpToNextLevel() const {
 }
 
 void Player::setScore(int newScore) {
-    // Không cho score âm để tránh trạng thái sai và có case test rõ ràng
+    // Không cho score âm để tránh trạng thái sai 
     if (newScore < MIN_PLAYER_SCORE) {
         throw std::invalid_argument("Player::setScore - score must be >= 0");
     }
@@ -73,8 +73,8 @@ void Player::levelUp() {
     
     maxHp += 20;           // +20 max HP 
     hp = maxHp;            // Hồi full máu
-    speed += 0.2f;         // +0.2 
-    damage += 5;           // +5 
+    speed += 0.05f;         // +0.2 
+    damage += 2;           // +5 
 }
 
 // Hàm cập nhật vị trí ng chơi liên tục
