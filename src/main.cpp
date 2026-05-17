@@ -348,7 +348,7 @@ int main() {
 
             // Dan co ban trung enemy se gay sat thuong truc tiep
             for (size_t i = 0; i < enemies.size(); i++) {
-                float hitboxRadius = waveSystem.getCurrentWaveNumber() == 20 ? 70.0f : 15.0f;
+                float hitboxRadius = waveSystem.getCurrentWaveNumber() == 20 ? 80.0f : 20.0f;
                 for (size_t j = 0; j < bullets.size(); j++) {
                     if (!bullets[j]->getIsEnemyBullet() &&
                         Vector2Distance({bullets[j]->getX(), bullets[j]->getY()}, {enemies[i]->getX(), enemies[i]->getY()}) < hitboxRadius) {
@@ -509,21 +509,21 @@ int main() {
          // NĂ¡ÂºÂ¾U Ă„ÂANG PAUSE THÄ‚Å’ VĂ¡ÂºÂ¼ BĂ¡ÂºÂ¢NG MENU
         if (isPaused) {
             // VĂ¡ÂºÂ½ lĂ¡Â»â€ºp nĂ¡Â»Ân mĂ¡Â»Â Ă„â€˜Ä‚Â¨ lÄ‚Âªn game
-            DrawRectangle(0, 0, 1920, 1040, Fade(BLACK, 0.6f));
+            // DrawRectangle(0, 0, 1920, 1040, Fade(BLACK, 0.6f));
 
-            // VĂ¡ÂºÂ½ cÄ‚Â¡i bĂ¡ÂºÂ£ng Menu Ă¡Â»Å¸ giĂ¡Â»Â¯a
-            DrawRectangle(660, 250, 600, 420, RAYWHITE);
-            DrawText("GAME PAUSED", 765, 310, 54, BLACK);
+            // // VĂ¡ÂºÂ½ cÄ‚Â¡i bĂ¡ÂºÂ£ng Menu Ă¡Â»Å¸ giĂ¡Â»Â¯a
+            // DrawRectangle(660, 250, 600, 420, RAYWHITE);
+            // DrawText("GAME PAUSED", 765, 310, 54, BLACK);
 
             // NÄ‚Âºt RESUME
             Rectangle resumeBtn = { 760, 410, 400, 80 };
-            DrawRectangleRec(resumeBtn, LIGHTGRAY);
-            DrawText("RESUME", 870, 432, 36, BLACK);
+            // DrawRectangleRec(resumeBtn, LIGHTGRAY);
+            // DrawText("RESUME", 870, 432, 36, BLACK);
 
             // NÄ‚Âºt EXIT
             Rectangle exitBtn = { 760, 530, 400, 80 };
-            DrawRectangleRec(exitBtn, RED);
-            DrawText("EXIT", 915, 552, 36, WHITE);
+            // DrawRectangleRec(exitBtn, RED);
+            // DrawText("EXIT", 915, 552, 36, WHITE);
 
             // Check click vÄ‚Â o cÄ‚Â¡c nÄ‚Âºt trong Menu
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {

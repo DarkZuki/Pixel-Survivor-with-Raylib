@@ -67,14 +67,32 @@ bool Enemy::canShoot(){
 
 void Enemy::draw() {
     if (texture !=nullptr){
-        float targetSize = 70.0f;
         float frameWidth = (float)texture->width / frameCount;
+        float renderWidth = 0.0f;
+        float renderHeight = 0.0f;
+        
+        if (enemyType == 0) {         // Quái NORMAL
+            renderWidth = 120.0f;
+            renderHeight = 200.0f;
+        } 
+        else if (enemyType == 1) {    // Quái FAST
+            renderWidth = 110.0f;
+            renderHeight = 110.0f;
+        } 
+        else if (enemyType == 2) {    // Quái TANK
+            renderWidth = 140.0f;
+            renderHeight = 300.0f;    
+        } 
+        else if (enemyType == 3) {    // Quái RANGED
+            renderWidth = 120.0f;
+            renderHeight = 180.0f;
+        }
         // tạo cấu hình vùng ảnh
-        Rectangle source = { frameWidth * currentFrame, 0.0f, frameWidth * rotation, (float)texture->height };
+        Rectangle source = { frameWidth* 4.0f * currentFrame, 0.0f, frameWidth * rotation, (float)texture->height };
         // tạo cấu hình vùng va chạm
-        Rectangle dest = { x, y, targetSize, targetSize };
+        Rectangle dest = { x, y, renderWidth, renderHeight };
         // thiết lập điểm gốc (tâm hình chữ nhật) để tính góc xoay từ tâm
-        Vector2 origin = { targetSize / 2.0f, targetSize / 2.0f };
+        Vector2 origin = { renderWidth / 2.0f, renderHeight / 2.0f };
         // Vẽ
         DrawTexturePro(*texture, source, dest, origin, 0.0f, WHITE);
     }

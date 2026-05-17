@@ -59,7 +59,7 @@ void Boss::draw() {
     if (texture !=nullptr){
         // ep khung hinh voi hit box 70px
         float targetWidth = 240.0f;
-        float targetHeight = 260.0f;
+        float targetHeight = 300.0f;
         float frameWidth = (float)texture->width / frameCount;
         // tạo cấu hình vùng ảnh
         Rectangle source = {frameWidth * currentFrame, 0.0f, frameWidth * rotation, (float)texture->height };
