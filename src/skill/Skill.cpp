@@ -259,42 +259,47 @@ void Skill::triggerShieldCollision(std::vector<Enemy*>& enemies) {
 void Skill::triggerHammerCollision(std::vector<Enemy*>& enemies) {
     float dt = GetFrameTime();
 
-    // 1. SINH BÚA: Dùng stats.cooldown và stats.count từ SkillLevel.cpp
+    // 1. SINH BÚA TẠI TÂM PLAYER (logic tỏa góc 20 độ)
     if (type == SKILL_HAMMER && hammer_timer >= stats.cooldown && !enemies.empty()) {
         Enemy* target = findNearestEnemy(enemies);
         if (target) {
             hammer_timer = 0.0f;
-            Vector2 dir = NormalizeOrFallback(Vector2Subtract({target->getX(), target->getY()}, {player->getX(), player->getY()}));
+            // Hướng gốc từ Player thẳng tới quái
+            Vector2 baseDir = NormalizeOrFallback(Vector2Subtract({target->getX(), target->getY()}, {player->getX(), player->getY()}));
             
             for (int i = 0; i < stats.count; i++) {
-                // Sinh ngay tại tâm Player
-                Vector2 spawnPos = { player->getX(), player->getY() };
+                // TÍNH TOÁN GÓC LỆCH: Để búa tỏa ra hình quạt
+                // Công thức tính góc lệch sao cho hướng gốc nằm ở giữa
+                float angleOffset = (float)(i - (stats.count - 1) / 2.0f) * 20.0f; 
                 
+                // Xoay vector hướng gốc đi một góc angleOffset (Dùng hàm raymath)
+                Vector2 spreadDir = Vector2Rotate(baseDir, angleOffset * DEG2RAD);
+
                 Hammer newHammer;
-                newHammer.pos = spawnPos;
-                // Vận tốc bay lấy từ stats.speed của Level
-                newHammer.speed = Vector2Scale(dir, stats.speed);
+                newHammer.pos = { player->getX(), player->getY() }; //sinh tại tâm
+                
+                // Vận tốc bay lấy từ stats.speed nhưng theo hướng đã tỏa ra
+                newHammer.speed = Vector2Scale(spreadDir, stats.speed); 
+                
                 newHammer.active = true;
                 newHammer.rotation = 0.0f;
                 newHammer.isRiu = (level >= 10);
-                newHammer.lastHitEnemy = nullptr; 
+                newHammer.lastHitEnemy = nullptr;
 
                 activeHammers.push_back(newHammer);
             }
         }
     }
 
-    // 2. CẬP NHẬT DI CHUYỂN
+    // 2. CẬP NHẬT DI CHUYỂN 
     for (int i = (int)activeHammers.size() - 1; i >= 0; i--) {
         auto& h = activeHammers[i];
         
-        // Búa bay thẳng theo hướng ban đầu, tốc độ dựa trên Level
         h.pos.x += h.speed.x * dt;
         h.pos.y += h.speed.y * dt;
         h.rotation += 10.0f * dt;
 
-        // 3. LOGIC XÓA DỰA TRÊN LEVEL:
-        // Dùng stats.range từ Level để quyết định búa bay bao xa thì biến mất
+        // 3. LOGIC XÓA DỰA TRÊN LEVEL 
         if (Vector2Distance({player->getX(), player->getY()}, h.pos) > stats.range) {
             h.active = false;
         }
@@ -304,15 +309,13 @@ void Skill::triggerHammerCollision(std::vector<Enemy*>& enemies) {
             continue;
         }
 
-        // 4. VA CHẠM DỰA TRÊN LEVEL:
+        // 4. VA CHẠM DỰA TRÊN LEVEL
         for (Enemy* enemy : enemies) {
             if (!enemy) continue;
-
-            // Cơ chế gây dame 1 lần: Chỉ dame nếu búa này chưa từng chạm con quái này
-            if (h.lastHitEnemy != (void*)enemy) { 
+            if (h.lastHitEnemy != (void*)enemy) {
                 if (CheckCollisionCircles(h.pos, 35, {enemy->getX(), enemy->getY()}, 20)) {
-                    enemy->takeDamage(stats.damage); // Dame từ stats của Level
-                    h.lastHitEnemy = (void*)enemy; 
+                    enemy->takeDamage(stats.damage);
+                    h.lastHitEnemy = (void*)enemy;
                 }
             }
         }

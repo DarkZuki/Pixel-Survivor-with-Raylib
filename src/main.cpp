@@ -18,6 +18,14 @@
 #include "upgrade/UpgradeSystem.h"
 using namespace std;
 
+bool saveGame(const char* fileName, Player& player, WaveManager& waveSystem, float gameTimer, int currentDiffID,
+              const vector<Weapon*>& allWeapons, const vector<Weapon*>& weaponInventory, Weapon* currentWeapon,
+              const vector<Skill*>& allSkills, const vector<Skill*>& skillInventory);
+bool loadGame(const char* fileName, Player& player, WaveManager& waveSystem, float& gameTimer, int& currentDiffID,
+              bool& shouldShowUpgrade, int& previousLevel, const vector<Weapon*>& allWeapons,
+              vector<Weapon*>& weaponInventory, Weapon*& currentWeapon, const vector<Skill*>& allSkills,
+              vector<Skill*>& skillInventory);
+
 // Tai sprite cho 5 loai enemy vao mang dung chung
 void loadEnemySprites(Texture2D sprites[]) {
     const char* paths[5] = {
@@ -226,6 +234,7 @@ int main() {
         int currentDiffID = -1;
         bool gameStarted = false;
         bool showTitleScreen = true;
+        const char* saveFile = "savegame.txt";
 
         // Danh sach skill tong va inventory skill dang trang bi
         vector<Skill*> allSkills = {
@@ -274,6 +283,18 @@ int main() {
             }
 
             float dt = GetFrameTime();
+
+            if (IsKeyPressed(KEY_F5)) {
+                saveGame(saveFile, player, waveSystem, gameTimer, currentDiffID, allWeapons, weaponInventory, currentWeapon, allSkills, skillInventory);
+            }
+
+            if (IsKeyPressed(KEY_F9)) {
+                if (loadGame(saveFile, player, waveSystem, gameTimer, currentDiffID, shouldShowUpgrade, previousLevel, allWeapons, weaponInventory, currentWeapon, allSkills, skillInventory)) {
+                    gameStarted = true;
+                    isPaused = false;
+                }
+            }
+
             if (updateUpgradeMenu(player, upgradeSystem, allSkills, skillInventory, allWeapons, weaponInventory, currentWeapon, floorTexture, wallsTexture, entities, weaponProjectiles)) continue;
 
             // Moi lan len level thi mo them 1 lan upgrade menu
@@ -432,6 +453,7 @@ int main() {
        
 
         DrawText(TextFormat("Score: %d", player.getScore()), 24, 144, 36, WHITE);
+        DrawText("F5: Save   F9: Load", 24, 188, 24, LIGHTGRAY);
         // Hien thi wave va thoi gian song sot
         int total = (int)waveSystem.getInternalTimer();
         int waveMins = (int)(total / 60);
