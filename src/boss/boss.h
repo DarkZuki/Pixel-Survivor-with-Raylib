@@ -21,6 +21,7 @@ public:
     void update() override;
     void draw() override;
     void takeDamage(int damage) override;
+    float getVisualYOffset() const override { return 0.0f; }
     
 }; 
 

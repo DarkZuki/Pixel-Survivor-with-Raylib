@@ -65,38 +65,47 @@ bool Enemy::canShoot(){
     return false;
 }
 
+float Enemy::getVisualYOffset() const {
+    if (enemyType == 0) return 52.0f;
+    if (enemyType == 1) return 36.0f;
+    if (enemyType == 2) return 78.0f;
+    if (enemyType == 3) return 48.0f;
+    return 0.0f;
+}
+
 void Enemy::draw() {
     if (texture !=nullptr){
         float frameWidth = (float)texture->width / frameCount;
         float renderWidth = 0.0f;
         float renderHeight = 0.0f;
+        float renderYOffset = getVisualYOffset();
         
         if (enemyType == 0) {         // Quái NORMAL
             renderWidth = 120.0f;
-            renderHeight = 200.0f;
+            renderHeight = 235.0f;
         } 
         else if (enemyType == 1) {    // Quái FAST
             renderWidth = 110.0f;
-            renderHeight = 110.0f;
+            renderHeight = 145.0f;
         } 
         else if (enemyType == 2) {    // Quái TANK
             renderWidth = 140.0f;
-            renderHeight = 300.0f;    
+            renderHeight = 345.0f;    
         } 
         else if (enemyType == 3) {    // Quái RANGED
             renderWidth = 120.0f;
-            renderHeight = 180.0f;
+            renderHeight = 220.0f;
         }
         // tạo cấu hình vùng ảnh
         Rectangle source = { frameWidth* 4.0f * currentFrame, 0.0f, frameWidth * rotation, (float)texture->height };
         // tạo cấu hình vùng va chạm
-        Rectangle dest = { x, y, renderWidth, renderHeight };
+        Rectangle dest = { x, y - renderYOffset, renderWidth, renderHeight };
         // thiết lập điểm gốc (tâm hình chữ nhật) để tính góc xoay từ tâm
         Vector2 origin = { renderWidth / 2.0f, renderHeight / 2.0f };
         // Vẽ
         DrawTexturePro(*texture, source, dest, origin, 0.0f, WHITE);
     }
-    DrawText(TextFormat("HP: %d", hp), x - 28, y - 38, 16, WHITE);
+    DrawText(TextFormat("HP: %d", hp), x - 28, y - getVisualYOffset() - 30, 16, WHITE);
 }
 
 void removeEnemy(std::vector<Entity*>& entities, std::vector<Enemy*>& enemies, int idx) {

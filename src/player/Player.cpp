@@ -150,13 +150,13 @@ void Player::draw() {
     float frameWidth = (float)currentTexture.width;
     float frameHeight = (float)currentTexture.height;
     int currentFrame = 0;
-    float drawWidth = 80.0f;
-    float drawHeight = 80.0f;
+    float drawWidth = 110.0f;
+    float drawHeight = 110.0f;
 
     if (isWalking) {
         frameWidth = (float)currentTexture.width / 8.0f;
         currentFrame = walkFrame;
-        drawHeight = 200.0f;
+        drawHeight = 250.0f;
         drawWidth = drawHeight * (frameWidth / frameHeight);
     }
 
@@ -166,6 +166,6 @@ void Player::draw() {
     }
     Rectangle dest = {x - drawWidth / 2.0f, y - drawHeight / 2.0f, drawWidth, drawHeight};
     DrawTexturePro(currentTexture, source, dest, {0.0f, 0.0f}, 0.0f, WHITE);
-    DrawText(TextFormat("HP: %d/%d", hp, maxHp), x - 45, y - 54, 18, WHITE);
-    DrawText(TextFormat("LV: %d", level), x - 27, y - 76, 18, YELLOW);
+    DrawText(TextFormat("HP: %d/%d", hp, maxHp), x - 45, y - 63, 18, WHITE);
+    DrawText(TextFormat("LV: %d", level), x - 27, y - 85, 18, YELLOW);
 }

@@ -85,7 +85,7 @@ Enemy* Skill::findNearestEnemy(const std::vector<Enemy*>& enemies) {
     float minD = 9999.0f;
     for (Enemy* enemy : enemies) {
         if (!enemy) continue;
-        float d = Vector2Distance({player->getX(), player->getY()}, {enemy->getX(), enemy->getY()});
+        float d = Vector2Distance({player->getX(), player->getY()}, {enemy->getX(), enemy->getCollisionCenterY()});
         if (d < minD) {
             minD = d;
             nearest = enemy;
@@ -152,7 +152,7 @@ void Skill::triggerLaser(std::vector<Enemy*>& enemies) {
     Enemy* target = findNearestEnemy(enemies);
     if (!target) return;
 
-    laser_direction = NormalizeOrFallback(Vector2Subtract({target->getX(), target->getY()}, {x, y}));
+    laser_direction = NormalizeOrFallback(Vector2Subtract({target->getX(), target->getCollisionCenterY()}, {x, y}));
     is_laser_active = true;
     laser_timer = 0.2f;
     laser_cooldown_timer = stats.cooldown;
@@ -161,12 +161,12 @@ void Skill::triggerLaser(std::vector<Enemy*>& enemies) {
     for (Enemy* enemy : enemies) {
         if (!enemy) continue;
         Vector2 endPos = Vector2Add({x, y}, Vector2Scale(laser_direction, stats.range));
-        if (CheckCollisionCircleLine({enemy->getX(), enemy->getY()}, 20, {x, y}, endPos)) {
+        if (CheckCollisionCircleLine({enemy->getX(), enemy->getCollisionCenterY()}, 20, {x, y}, endPos)) {
             enemy->takeDamage(stats.damage);
         }
         if (stats.special) {
             Vector2 endPosRev = Vector2Add({x, y}, Vector2Scale(laser_direction, -stats.range));
-            if (CheckCollisionCircleLine({enemy->getX(), enemy->getY()}, 20, {x, y}, endPosRev)) {
+            if (CheckCollisionCircleLine({enemy->getX(), enemy->getCollisionCenterY()}, 20, {x, y}, endPosRev)) {
                 enemy->takeDamage(stats.damage);
             }
         }
@@ -188,7 +188,7 @@ void Skill::triggerThunder(std::vector<Enemy*>& enemies) {
         if (!target) continue;
         target->takeDamage(stats.damage);
         // Luu vi tri de ve cot set giang xuong
-        thunderPositions.push_back({target->getX(), target->getY()});
+        thunderPositions.push_back({target->getX(), target->getCollisionCenterY()});
         tempEnemies.erase(tempEnemies.begin() + randomIndex);
     }
 
@@ -250,7 +250,7 @@ void Skill::triggerShieldCollision(std::vector<Enemy*>& enemies) {
         }
         // 5. VA CHẠM: Dùng stats.damage từ Level
         for (Enemy* enemy : enemies) {
-            if (CheckCollisionCircles(s.pos, s.radius, {enemy->getX(), enemy->getY()}, 20)) {
+            if (CheckCollisionCircles(s.pos, s.radius, {enemy->getX(), enemy->getCollisionCenterY()}, 20)) {
                 enemy->takeDamage(stats.damage / 10 + 1); 
             }
         }
@@ -265,7 +265,7 @@ void Skill::triggerHammerCollision(std::vector<Enemy*>& enemies) {
         if (target) {
             hammer_timer = 0.0f;
             // Hướng gốc từ Player thẳng tới quái
-            Vector2 baseDir = NormalizeOrFallback(Vector2Subtract({target->getX(), target->getY()}, {player->getX(), player->getY()}));
+            Vector2 baseDir = NormalizeOrFallback(Vector2Subtract({target->getX(), target->getCollisionCenterY()}, {player->getX(), player->getY()}));
             
             for (int i = 0; i < stats.count; i++) {
                 // TÍNH TOÁN GÓC LỆCH: Để búa tỏa ra hình quạt
@@ -313,7 +313,7 @@ void Skill::triggerHammerCollision(std::vector<Enemy*>& enemies) {
         for (Enemy* enemy : enemies) {
             if (!enemy) continue;
             if (h.lastHitEnemy != (void*)enemy) {
-                if (CheckCollisionCircles(h.pos, 35, {enemy->getX(), enemy->getY()}, 20)) {
+                if (CheckCollisionCircles(h.pos, 35, {enemy->getX(), enemy->getCollisionCenterY()}, 20)) {
                     enemy->takeDamage(stats.damage);
                     h.lastHitEnemy = (void*)enemy;
                 }
@@ -333,7 +333,7 @@ void Skill::triggerShurikenCollision(std::vector<Enemy*>& enemies) {
         for (Enemy* enemy : enemies) {
             if (!enemy) continue;
             // Check va cham
-            if (CheckCollisionCircles(pos, stats.effectRadius, {enemy->getX(), enemy->getY()}, 20)) {
+            if (CheckCollisionCircles(pos, stats.effectRadius, {enemy->getX(), enemy->getCollisionCenterY()}, 20)) {
                 enemy->takeDamage(stats.damage);
             }
         }

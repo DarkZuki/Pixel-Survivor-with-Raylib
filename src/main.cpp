@@ -71,6 +71,21 @@ void drawTitleScreen(Texture2D mainScreen) {
     EndDrawing();
 }
 
+// Ve thong bao tam thoi sau khi save game
+void drawSaveStatusMessage(const char* message, float timer) {
+    if (message == nullptr || timer <= 0.0f) return;
+
+    int fontSize = 36;
+    int textWidth = MeasureText(message, fontSize);
+    int boxWidth = textWidth + 64;
+    int boxHeight = 72;
+    int boxX = (GetScreenWidth() - boxWidth) / 2;
+    int boxY = (GetScreenHeight() - boxHeight) / 2;
+
+    DrawRectangleRounded(Rectangle{(float)boxX, (float)boxY, (float)boxWidth, (float)boxHeight}, 0.25f, 8, Fade(BLACK, 0.72f));
+    DrawText(message, boxX + 32, boxY + 18, fontSize, WHITE);
+}
+
 // Ve phan world ben trong camera cua player
 void drawWorld(Player& player, Texture2D floorTexture, Texture2D wallsTexture, const vector<Entity*>& entities, const vector<Skill*>& skills, const vector<WeaponProjectile>& weaponProjectiles) {
     BeginMode2D(player.getCamera());
@@ -163,7 +178,7 @@ bool drawVictory(WaveManager& waveSystem, vector<Enemy*>& enemies, Player& playe
 void fireEnemyBullets(vector<Enemy*>& enemies, Player& player, vector<Bullet*>& bullets, vector<Entity*>& entities) {
     for (auto e : enemies) {
         if (e->getEnemyType() != 3 || !e->canShoot()) continue;
-        Bullet* bullet = new Bullet(e->getX(), e->getY(), player.getX(), player.getY(), e->getDamage());
+        Bullet* bullet = new Bullet(e->getX(), e->getCollisionCenterY(), player.getX(), player.getY(), e->getDamage());
         bullet->setIsEnemyBullet(true);
         bullets.push_back(bullet);
         entities.push_back(bullet);
@@ -235,6 +250,8 @@ int main() {
         bool gameStarted = false;
         bool showTitleScreen = true;
         const char* saveFile = "savegame.txt";
+        const char* saveStatusMessage = nullptr;
+        float saveStatusTimer = 0.0f;
 
         // Danh sach skill tong va inventory skill dang trang bi
         vector<Skill*> allSkills = {
@@ -262,6 +279,27 @@ int main() {
 
         // Vong lap game chinh
         while (!WindowShouldClose()) {
+        float frameDt = GetFrameTime();
+        if (saveStatusTimer > 0.0f) {
+            saveStatusTimer -= frameDt;
+            if (saveStatusTimer <= 0.0f) {
+                saveStatusTimer = 0.0f;
+                saveStatusMessage = nullptr;
+            }
+        }
+
+        if (IsKeyPressed(KEY_F9)) {
+            if (loadGame(saveFile, player, waveSystem, gameTimer, currentDiffID, shouldShowUpgrade, previousLevel, allWeapons, weaponInventory, currentWeapon, allSkills, skillInventory)) {
+                showTitleScreen = false;
+                gameStarted = true;
+                isPaused = false;
+                saveStatusMessage = "Loaded data !";
+            } else {
+                saveStatusMessage = "Failed to load data !";
+            }
+            saveStatusTimer = 2.5f;
+        }
+
         if (showTitleScreen) {
             if (IsKeyPressed(KEY_SPACE)) showTitleScreen = false;
             drawTitleScreen(mainScreenTexture);
@@ -282,17 +320,12 @@ int main() {
                 if (!gameStarted) continue;
             }
 
-            float dt = GetFrameTime();
+            float dt = frameDt;
 
             if (IsKeyPressed(KEY_F5)) {
-                saveGame(saveFile, player, waveSystem, gameTimer, currentDiffID, allWeapons, weaponInventory, currentWeapon, allSkills, skillInventory);
-            }
-
-            if (IsKeyPressed(KEY_F9)) {
-                if (loadGame(saveFile, player, waveSystem, gameTimer, currentDiffID, shouldShowUpgrade, previousLevel, allWeapons, weaponInventory, currentWeapon, allSkills, skillInventory)) {
-                    gameStarted = true;
-                    isPaused = false;
-                }
+                bool saved = saveGame(saveFile, player, waveSystem, gameTimer, currentDiffID, allWeapons, weaponInventory, currentWeapon, allSkills, skillInventory);
+                saveStatusMessage = saved ? "Saved data !" : "Failed to save data !";
+                saveStatusTimer = 2.5f;
             }
 
             if (updateUpgradeMenu(player, upgradeSystem, allSkills, skillInventory, allWeapons, weaponInventory, currentWeapon, floorTexture, wallsTexture, entities, weaponProjectiles)) continue;
@@ -351,7 +384,7 @@ int main() {
                 float hitboxRadius = waveSystem.getCurrentWaveNumber() == 20 ? 80.0f : 20.0f;
                 for (size_t j = 0; j < bullets.size(); j++) {
                     if (!bullets[j]->getIsEnemyBullet() &&
-                        Vector2Distance({bullets[j]->getX(), bullets[j]->getY()}, {enemies[i]->getX(), enemies[i]->getY()}) < hitboxRadius) {
+                        Vector2Distance({bullets[j]->getX(), bullets[j]->getY()}, {enemies[i]->getX(), enemies[i]->getCollisionCenterY()}) < hitboxRadius) {
                         enemies[i]->getDamage();
                         bullets[j]->setX(-1000);
                     }
@@ -363,7 +396,7 @@ int main() {
 
             // Enemy cham vao player se gay damage contact
             for (auto enemy : enemies) {
-                if (Vector2Distance({player.getX(), player.getY()}, {enemy->getX(), enemy->getY()}) < 30.0f) player.takeDamage(enemy->getDamage());
+                if (Vector2Distance({player.getX(), player.getY()}, {enemy->getX(), enemy->getCollisionCenterY()}) < 30.0f) player.takeDamage(enemy->getDamage());
             }
 
             // Dan enemy trung player se bi xoa khoi scene
@@ -454,6 +487,7 @@ int main() {
 
         DrawText(TextFormat("Score: %d", player.getScore()), 24, 144, 36, WHITE);
         DrawText("F5: Save   F9: Load", 24, 220, 24, LIGHTGRAY);
+        drawSaveStatusMessage(saveStatusMessage, saveStatusTimer);
         // Hien thi wave va thoi gian song sot
         int total = (int)waveSystem.getInternalTimer();
         int waveMins = (int)(total / 60);
