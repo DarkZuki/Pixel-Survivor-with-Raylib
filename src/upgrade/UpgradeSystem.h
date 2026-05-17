@@ -28,7 +28,7 @@ private:
     UpgradeOption selected;
     UpgradeOption options[3];
     Rectangle boxes[3];
-    Rectangle skipBox = {780, 860, 360, 90};
+    Rectangle skipBox = {780, 800, 360, 90};
 
 public:
     void showUpgradeMenu(std::vector<Weapon*>& weapons, std::vector<Skill*>& skills,

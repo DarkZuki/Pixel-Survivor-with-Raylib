@@ -453,7 +453,7 @@ int main() {
        
 
         DrawText(TextFormat("Score: %d", player.getScore()), 24, 144, 36, WHITE);
-        DrawText("F5: Save   F9: Load", 24, 188, 24, LIGHTGRAY);
+        DrawText("F5: Save   F9: Load", 24, 220, 24, LIGHTGRAY);
         // Hien thi wave va thoi gian song sot
         int total = (int)waveSystem.getInternalTimer();
         int waveMins = (int)(total / 60);
@@ -506,33 +506,33 @@ int main() {
             DrawText(skillInventory[2]->getName(), skillSlot3.x + 8, skillSlot3.y + 50, 18, WHITE);
         }
 
-         // NĂ¡ÂºÂ¾U Ă„ÂANG PAUSE THÄ‚Å’ VĂ¡ÂºÂ¼ BĂ¡ÂºÂ¢NG MENU
+        // Nếu đang pause thì vẽ bảng menu
         if (isPaused) {
-            // VĂ¡ÂºÂ½ lĂ¡Â»â€ºp nĂ¡Â»Ân mĂ¡Â»Â Ă„â€˜Ä‚Â¨ lÄ‚Âªn game
-            // DrawRectangle(0, 0, 1920, 1040, Fade(BLACK, 0.6f));
+            // Vẽ lớp nền mờ đè lên game
+            DrawRectangle(0, 0, 1920, 1040, Fade(BLACK, 0.6f));
 
-            // // VĂ¡ÂºÂ½ cÄ‚Â¡i bĂ¡ÂºÂ£ng Menu Ă¡Â»Å¸ giĂ¡Â»Â¯a
-            // DrawRectangle(660, 250, 600, 420, RAYWHITE);
-            // DrawText("GAME PAUSED", 765, 310, 54, BLACK);
+            // Vẽ bảng menu ở giữa
+            DrawRectangle(660, 250, 600, 420, RAYWHITE);
+            DrawText("GAME PAUSED", 765, 310, 54, BLACK);
 
-            // NÄ‚Âºt RESUME
+            // Nút Resume
             Rectangle resumeBtn = { 760, 410, 400, 80 };
-            // DrawRectangleRec(resumeBtn, LIGHTGRAY);
-            // DrawText("RESUME", 870, 432, 36, BLACK);
+            DrawRectangleRec(resumeBtn, LIGHTGRAY);
+            DrawText("RESUME", 870, 432, 36, BLACK);
 
-            // NÄ‚Âºt EXIT
+            // Nút Exit
             Rectangle exitBtn = { 760, 530, 400, 80 };
-            // DrawRectangleRec(exitBtn, RED);
-            // DrawText("EXIT", 915, 552, 36, WHITE);
+            DrawRectangleRec(exitBtn, RED);
+            DrawText("EXIT", 915, 552, 36, WHITE);
 
-            // Check click vÄ‚Â o cÄ‚Â¡c nÄ‚Âºt trong Menu
+            // Kiểm tra click vào các nút trong Menu
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 Vector2 mousePos = GetMousePosition();
                 if (CheckCollisionPointRec(mousePos, resumeBtn)) {
-                    isPaused = false; // ChĂ¡ÂºÂ¡y tiĂ¡ÂºÂ¿p
+                    isPaused = false; // Chạy tiếp
                 }
                 if (CheckCollisionPointRec(mousePos, exitBtn)) {
-                    break; // ThoÄ‚Â¡t vÄ‚Â²ng lĂ¡ÂºÂ·p main -> Out game
+                    break; // Thoát vòng lặp main -> thoát game
                 }
             }
         }

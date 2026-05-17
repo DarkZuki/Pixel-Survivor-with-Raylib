@@ -159,6 +159,6 @@ void UpgradeSystem::draw() {
     if (delay > 0){
         DrawText("WAIT...", 908, 820, 36, LIGHTGRAY);
     }else{
-        DrawText("SKIP", skipBox.x + 128, skipBox.y + -50, 36, RED);
+        DrawText("SKIP", skipBox.x + 128, skipBox.y +20, 36, RED);
     }
 }
