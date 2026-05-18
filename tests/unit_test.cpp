@@ -10,6 +10,7 @@
 void testWaveProgression() {
     WaveManager manager;
 
+    // Mốc wave được suy ra từ internal timer, nên test này khóa lại các mốc chuyển wave cơ bản.
     manager.setInternalTimer(0.0f);
     assert(manager.getCurrentWaveNumber() == 1);
 
@@ -22,6 +23,7 @@ void testWaveProgression() {
 
 void testWaveCapAtTwenty() {
     WaveManager manager;
+    // Dù timer tăng rất lớn, wave hiện tại vẫn phải bị chặn ở trần thiết kế.
     manager.setInternalTimer(9999.0f);
     assert(manager.getCurrentWaveNumber() == MAX_WAVE_NUMBER);
 }
@@ -29,6 +31,7 @@ void testWaveCapAtTwenty() {
 void testDifficultyMultipliers() {
     WaveManager manager;
 
+    // Các assert này bảo vệ balance cơ bản giữa 3 mức khó.
     manager.setDifficulty(0);
     assert(manager.getDifficultyHPMultiplier() == 0.8f);
     assert(manager.getDifficultySpeedMultiplier() == 0.8f);
@@ -46,6 +49,7 @@ void testDifficultyThrowsOnInvalidInput() {
     WaveManager manager;
     bool threw = false;
 
+    // Input ngoài khoảng hợp lệ cần bị chặn rõ ràng thay vì âm thầm rơi về default.
     try {
         manager.setDifficulty(99);
     } catch (const std::invalid_argument&) {
@@ -58,6 +62,8 @@ void testDifficultyThrowsOnInvalidInput() {
 void testBossSpawnRule() {
     WaveManager manager;
     manager.setInternalTimer(570.0f); // wave 20
+
+    // Boss chỉ nên spawn một lần ở điều kiện hợp lệ.
     assert(manager.shouldSpawnBoss() == true);
 
     manager.markBossSpawned();
@@ -68,9 +74,11 @@ void testPlayerScoreRules() {
     Player player;
     assert(player.getScore() == 0);
 
+    // Score tăng bình thường với số dương...
     player.addScore(25);
     assert(player.getScore() == 25);
 
+    // ...và phải ném lỗi nếu có code nào cố cộng điểm âm.
     bool threw = false;
     try {
         player.addScore(-5);

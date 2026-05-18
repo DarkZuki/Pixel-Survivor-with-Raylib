@@ -16,6 +16,8 @@ bool saveGame(const char* fileName, Player& player, WaveManager& waveSystem, flo
     ofstream out(fileName);
     if (!out.is_open()) return false;
 
+    // Ghi theo format "key: value" cố định để loadGame có thể parse tuần tự mà không cần
+    // thêm lớp serialize phức tạp. Nếu đổi tên key hoặc thứ tự, cần cập nhật phía load.
     out << fixed << setprecision(2);
     out << "difficulty: " << currentDiffID << '\n';
     out << "wave_timer: " << waveSystem.getInternalTimer() << '\n';
@@ -28,6 +30,8 @@ bool saveGame(const char* fileName, Player& player, WaveManager& waveSystem, flo
     out << "exp: " << player.getExp() << '\n';
     out << "score: " << player.getScore() << '\n';
 
+    // Inventory chỉ lưu "loại item nằm ở slot nào" dưới dạng index trong danh sách gốc.
+    // Cách này giúp file save gọn, nhưng đòi hỏi allWeapons/allSkills giữ nguyên thứ tự.
     int currentWeaponIndex = -1, weapon0Type = -1, weapon1Type = -1, skill0Type = -1, skill1Type = -1, skill2Type = -1;
     for (size_t i = 0; i < allWeapons.size(); i++) {
         if (allWeapons[i] == currentWeapon) currentWeaponIndex = (int)i;
@@ -68,6 +72,8 @@ bool loadGame(const char* fileName, Player& player, WaveManager& waveSystem, flo
     string key;
     char colon;
 
+    // Parse tuần tự và fail sớm nếu file bị thiếu field hoặc sai key.
+    // Điều này giữ cho save cũ/sai format không làm hỏng state đang chạy.
     if (!(in >> key >> colon >> currentDiffID) || key != "difficulty" || colon != ':') return false;
     if (!(in >> key >> colon >> waveTimer) || key != "wave_timer" || colon != ':') return false;
     if (!(in >> key >> colon >> gameTimer) || key != "game_timer" || colon != ':') return false;
@@ -99,6 +105,8 @@ bool loadGame(const char* fileName, Player& player, WaveManager& waveSystem, flo
     waveSystem.setDifficulty(currentDiffID);
     waveSystem.setInternalTimer(waveTimer);
 
+    // Reset toàn bộ level trước khi dựng lại inventory từ file save, tránh giữ sót state
+    // từ lần chơi hiện tại nếu người chơi load đè lên một session đang chạy.
     for (auto weapon : allWeapons) weapon->setLevel(0);
     for (auto skill : allSkills) skill->setLevel(0);
 
@@ -109,6 +117,7 @@ bool loadGame(const char* fileName, Player& player, WaveManager& waveSystem, flo
     int weaponTypes[] = {weapon0Type, weapon1Type}, weaponLevels[] = {weapon0Level, weapon1Level};
     int skillTypes[] = {skill0Type, skill1Type, skill2Type}, skillLevels[] = {skill0Level, skill1Level, skill2Level};
 
+    // Chỉ khôi phục các index hợp lệ; giá trị -1 nghĩa là slot trống.
     for (int i = 0; i < 2; i++) if (weaponTypes[i] >= 0 && weaponTypes[i] < (int)allWeapons.size()) {
         allWeapons[weaponTypes[i]]->setLevel(weaponLevels[i]);
         weaponInventory.push_back(allWeapons[weaponTypes[i]]);
@@ -119,6 +128,8 @@ bool loadGame(const char* fileName, Player& player, WaveManager& waveSystem, flo
         skillInventory.push_back(allSkills[skillTypes[i]]);
     }
 
+    // Nếu save không chỉ ra vũ khí đang cầm nhưng inventory vẫn hợp lệ,
+    // dùng slot đầu làm fallback để gameplay tiếp tục an toàn.
     if (currentWeapon == nullptr && !weaponInventory.empty()) currentWeapon = weaponInventory[0];
 
     shouldShowUpgrade = false;

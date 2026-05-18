@@ -252,6 +252,7 @@ int main() {
         Texture2D wallsTexture = LoadTexture("Graphics/Walls.png");
         Texture2D mainScreenTexture = LoadTexture("Graphics/Main screen.png");
         LoadItemTextures();
+
         // Toan bo state runtime chinh cua tran dau
         Player player;
         WaveManager waveSystem;
@@ -260,6 +261,8 @@ int main() {
         vector<Bullet*> bullets;
         vector<Item*> items;
         vector<WeaponProjectile> weaponProjectiles;
+
+        // Hai timer nay tach rieng de gameplay spawn quai va spawn item HP theo nhip khac nhau.
         float spawnTimer = 0.0f;
         float hpSpawnTimer = 0.0f;
         bool isPaused = false;
@@ -268,6 +271,8 @@ int main() {
         int currentDiffID = -1;
         bool gameStarted = false;
         bool showTitleScreen = true;
+
+        // Save file duoc goi truc tiep tu main loop; message/timer dung de hien toast ngan sau thao tac save/load.
         const char* saveFile = "savegame.txt";
         const char* saveStatusMessage = nullptr;
         float saveStatusTimer = 0.0f;
@@ -299,6 +304,8 @@ int main() {
         // Vong lap game chinh
         while (!WindowShouldClose()) {
         float frameDt = GetFrameTime();
+
+        // Dem nguoc thoi gian hien thong bao save/load de toast tu bien mat sau vai giay.
         if (saveStatusTimer > 0.0f) {
             saveStatusTimer -= frameDt;
             if (saveStatusTimer <= 0.0f) {
@@ -307,6 +314,8 @@ int main() {
             }
         }
 
+        // F9 cho phep load ngay tu bat ky trang thai nao; neu thanh cong thi bo qua title/difficulty
+        // va tiep tuc tran dau bang state vua doc tu file.
         if (IsKeyPressed(KEY_F9)) {
             if (loadGame(saveFile, player, waveSystem, gameTimer, currentDiffID, shouldShowUpgrade, previousLevel, allWeapons, weaponInventory, currentWeapon, allSkills, skillInventory)) {
                 showTitleScreen = false;
@@ -325,7 +334,8 @@ int main() {
             continue;
         }
 
-        // Pause bang nut tren UI hoac phim ESC
+        // Pause bang nut tren UI hoac phim ESC. Game chi dung logic gameplay,
+        // con phan draw van tiep tuc de nguoi choi thay menu pause.
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), pauseButton)) isPaused = !isPaused;
         if (IsKeyPressed(KEY_ESCAPE)) isPaused = !isPaused;
 
@@ -341,12 +351,14 @@ int main() {
 
             float dt = frameDt;
 
+            // F5 chi ghi snapshot state hien tai, khong reset hay doi flow trong frame.
             if (IsKeyPressed(KEY_F5)) {
                 bool saved = saveGame(saveFile, player, waveSystem, gameTimer, currentDiffID, allWeapons, weaponInventory, currentWeapon, allSkills, skillInventory);
                 saveStatusMessage = saved ? "Saved data !" : "Failed to save data !";
                 saveStatusTimer = 2.5f;
             }
 
+            // Khi menu upgrade dang mo, frame nay chi ve world dong bang o nen va UI upgrade.
             if (updateUpgradeMenu(player, upgradeSystem, allSkills, skillInventory, allWeapons, weaponInventory, currentWeapon, floorTexture, wallsTexture, entities, weaponProjectiles)) continue;
 
             // Moi lan len level thi mo them 1 lan upgrade menu
@@ -459,6 +471,7 @@ int main() {
             if (enemies[i]->getHp() <= 0) {
                 player.addScore(enemies[i]->getScoreReward());
 
+                // Moi enemy chet se roi 1 exp orb tai vi tri chet de player nhat sau.
                 Item* item = new Item(enemies[i]->getX(), enemies[i]->getY(), enemies[i]->getExpReward(), 0);
                 items.push_back(item);
                 entities.push_back(item);
@@ -498,7 +511,8 @@ int main() {
         DrawRectangleLines(expBarX, expBarY, expBarWidth, expBarHeight, WHITE);
 
         DrawText(TextFormat("EXP: %d/%d", player.getExp(), player.getExpToNextLevel()), 792, 1004, 36, SKYBLUE);
-      
+
+        // Nut pause duoc ve nhu mot HUD element co dinh, nen khong nam trong camera world.
         DrawRectangleRec(pauseButton, DARKGRAY);
         DrawText("||", pauseButton.x + 20, pauseButton.y + 12, 30, WHITE);
 
@@ -507,11 +521,13 @@ int main() {
         DrawText(TextFormat("Score: %d", player.getScore()), 24, 144, 36, WHITE);
         DrawText("F5: Save   F9: Load", 24, 220, 24, LIGHTGRAY);
         drawSaveStatusMessage(saveStatusMessage, saveStatusTimer);
+
         // Hien thi wave va thoi gian song sot
         int total = (int)waveSystem.getInternalTimer();
         int waveMins = (int)(total / 60);
         int waveSecs = (int)(total % 60);
-        // Display survival time in MM:SS format
+
+        // Chuyen mau text wave de nhan manh khi tran dau da qua giai doan mo dau.
         Color waveColor = (waveSystem.getCurrentWaveNumber() > 3.0 ) ? RED : WHITE;
         DrawText(TextFormat("Wave: %d", waveSystem.getCurrentWaveNumber()), 850, 96, 40, waveColor);
         DrawText(TextFormat("Time: %02d:%02d", waveMins, waveSecs), 792, 36, 45, WHITE);
@@ -591,7 +607,7 @@ int main() {
         }
         EndDrawing();
         }
-        // Giai phong texture truoc khi dong cua so
+        // Giai phong texture/asset o cuoi chuong trinh vi chung duoc load mot lan va dung xuyen suot tran dau.
         for (int i=0; i<5 ; i++){
             UnloadTexture(enemySprites[i]);
         }
