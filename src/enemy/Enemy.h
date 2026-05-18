@@ -4,6 +4,7 @@
 #include "../player/Player.h"
 #include "raylib.h"
 
+
 class Enemy : public Entity {
 protected:
     Player* player;
