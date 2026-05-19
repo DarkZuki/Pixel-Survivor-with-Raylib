@@ -150,7 +150,7 @@ void spawnHpItem(vector<Item*>& items, vector<Entity*>& entities) {
 void fireEnemyBullets(vector<Enemy*>& enemies, Player& player, vector<Bullet*>& bullets, vector<Entity*>& entities) {
     for (auto e : enemies) {
         if (e->getEnemyType() != 3 || !e->canShoot()) continue;
-        Bullet* bullet = new Bullet(e->getX(), e->getCollisionCenterY(), player.getX(), player.getY(), e->getDamage());
+        Bullet* bullet = new Bullet(e->getX(), e->getCollisionCenterY(), player.getX(), player.getY() + 12.0f, e->getDamage());
         bullet->setIsEnemyBullet(true);
         bullets.push_back(bullet);
         entities.push_back(bullet);
@@ -460,7 +460,7 @@ int main() {
 
             // Enemy cham vao player se gay damage contact
             for (auto enemy : enemies) {
-                if (Vector2Distance({player.getX(), player.getY()}, {enemy->getX(), enemy->getY()}) < 30.0f) {
+                if (Vector2Distance({player.getX(), player.getY() + 12.0f}, {enemy->getX(), enemy->getCollisionCenterY()}) < 30.0f) {
                     player.takeDamage(enemy->getDamage());
                     player.triggerHitFlash();
                 }
@@ -469,7 +469,7 @@ int main() {
             // Dan enemy trung player se bi xoa khoi scene
             for (size_t j = 0; j < bullets.size(); j++) {
                 if (bullets[j]->getIsEnemyBullet() &&
-                    Vector2Distance({bullets[j]->getX(), bullets[j]->getY()}, {player.getX(), player.getY()}) < 15.0f) {
+                    Vector2Distance({bullets[j]->getX(), bullets[j]->getY()}, {player.getX(), player.getY() + 12.0f}) < 15.0f) {
                     player.takeDamage(bullets[j]->getDamage());
                     player.triggerHitFlash();
                     removeEntity(entities, bullets[j]);
@@ -488,7 +488,7 @@ int main() {
                     continue;
                 }
 
-                if (Vector2Distance({player.getX(), player.getY()}, {items[k]->getX(), items[k]->getY()}) < 30.0f) {
+                if (Vector2Distance({player.getX(), player.getY() + 12.0f}, {items[k]->getX(), items[k]->getY()}) < 30.0f) {
                     if (items[k]->getID() == 1) player.setHp(player.getHp() + 10);
                     else {
                         int oldLevel = player.getLevel();

@@ -93,13 +93,13 @@ void Player::update() {
     
     // Kiểm tra va chạm trc khi đi
     // Di chuyển cả tọa độ x và y
-    if (IsPositionWalkable(newPos.x, newPos.y, 18.0f)) {
+    if (IsPositionWalkable(newPos.x, newPos.y + 12.0f, 18.0f)) {
         x = newPos.x;
         y = newPos.y;
     } else {
         // Nếu ko đi chéo đc đi từng cái
-        bool canMoveX = IsPositionWalkable(newPos.x, y, 18.0f);
-        bool canMoveY = IsPositionWalkable(x, newPos.y, 18.0f);
+        bool canMoveX = IsPositionWalkable(newPos.x, y + 12.0f, 18.0f);
+        bool canMoveY = IsPositionWalkable(x, newPos.y + 12.0f, 18.0f);
         
         if (canMoveX && canMoveY) {
             // Đi từng cái dc thì làm
@@ -180,7 +180,7 @@ void Player::draw() {
             tint = RED;
         }
     } 
-    DrawTexturePro(currentTexture, source, dest, {0.0f, 0.0f}, 0.0f, WHITE);
+    DrawTexturePro(currentTexture, source, dest, {0.0f, 0.0f}, 0.0f, tint);
     DrawText(TextFormat("HP: %d/%d", hp, maxHp), x - 45, y - 63, 18, WHITE);
     DrawText(TextFormat("LV: %d", level), x - 27, y - 85, 18, YELLOW);
 }

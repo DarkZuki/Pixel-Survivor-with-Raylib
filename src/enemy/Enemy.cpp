@@ -31,7 +31,7 @@ Enemy::Enemy(Player* p, int type, Texture2D* tex) : player(p), texture(tex), ene
 
 void Enemy::update() {
     // Move towards player
-    Vector2 direction = Vector2Subtract({player->getX(), player->getY()}, {x, y});
+    Vector2 direction = Vector2Subtract({player->getX(), player->getY() + 50.0f}, {x, y});
     float dist = Vector2Length(direction);
     
     if (dist > 0.1f) {
@@ -105,7 +105,7 @@ void Enemy::draw() {
         // Vẽ
         DrawTexturePro(*texture, source, dest, origin, 0.0f, WHITE);
     }
-    DrawText(TextFormat("HP: %d", hp), x - 28, y - getVisualYOffset() - 30, 16, WHITE);
+    DrawText(TextFormat("HP: %d", hp), x - 28, y - getVisualYOffset() - 45, 16, WHITE);
 }
 
 void removeEnemy(std::vector<Entity*>& entities, std::vector<Enemy*>& enemies, int idx) {

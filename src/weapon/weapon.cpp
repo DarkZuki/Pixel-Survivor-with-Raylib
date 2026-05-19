@@ -117,7 +117,7 @@ void Weapon::attack(Player& player, const std::vector<Enemy*>& enemies,
         case 3: {
             // Spell book ban dan no, ban kinh no luu trong angle
             Vector2 dir = NormalizeOrFallback({targetPosition.x - playerPos.x, targetPosition.y - playerPos.y});
-            constexpr float SPELL_BOOK_HITBOX_RADIUS = 16.0f;
+            constexpr float SPELL_BOOK_HITBOX_RADIUS = 20.0f;
 
             for (int i = 0; i < stats.count; i++) {
                 float angleOffset = (float)(i - stats.count / 2) * 10.0f;
@@ -194,14 +194,14 @@ void drawProjectiles(const std::vector<WeaponProjectile>& projectiles) {
         } else if (projectile.type == 2) {
             // Ve dan lua cua spell book
             Rectangle source = {0.0f, 0.0f, (float)fireTexture.width, (float)fireTexture.height};
-            Rectangle dest = {projectile.position.x, projectile.position.y, projectile.radius * 4.0f, projectile.radius * 4.0f};
+            Rectangle dest = {projectile.position.x, projectile.position.y, projectile.radius * 4.0f, projectile.radius * 5.0f};
             float rotation = GetProjectileRotation(projectile);
-            DrawTexturePro(fireTexture, source, dest, {projectile.radius * 2.0f, projectile.radius * 2.0f}, rotation, WHITE);
+            DrawTexturePro(fireTexture, source, dest, {projectile.radius * 2.3f, projectile.radius * 2.3f}, rotation, WHITE);
         } else if (projectile.type == 3) {
             // Ve hieu ung vu no
             Rectangle source = {0.0f, 0.0f, (float)explosionTexture.width, (float)explosionTexture.height};
-            Rectangle dest = {projectile.position.x, projectile.position.y, projectile.angle * 2.0f, projectile.angle * 2.0f};
-            DrawTexturePro(explosionTexture, source, dest, {projectile.angle, projectile.angle}, 0.0f, WHITE);
+            Rectangle dest = {projectile.position.x, projectile.position.y, projectile.angle * 3.4f, projectile.angle * 3.0f};
+            DrawTexturePro(explosionTexture, source, dest, {projectile.angle * 1.7f, projectile.angle * 1.7f}, 0.0f, WHITE);
         } else if (projectile.type == 4) {
             // Ve knife projectile
             Rectangle source = {0.0f, 0.0f, (float)knifeTexture.width, (float)knifeTexture.height};
@@ -211,9 +211,9 @@ void drawProjectiles(const std::vector<WeaponProjectile>& projectiles) {
         } else {
             // Mac dinh la dan cua magic wand
             Rectangle source = {0.0f, 0.0f, (float)magicTexture.width, (float)magicTexture.height};
-            Rectangle dest = {projectile.position.x, projectile.position.y, projectile.radius * 5.5f, projectile.radius * 5.5f};
+            Rectangle dest = {projectile.position.x, projectile.position.y, projectile.radius * 11.0f, projectile.radius * 11.0f};
             float rotation = GetProjectileRotation(projectile);
-            DrawTexturePro(magicTexture, source, dest, {projectile.radius * 2.0f, projectile.radius * 2.0f}, rotation, WHITE);
+            DrawTexturePro(magicTexture, source, dest, {projectile.radius * 5.5f, projectile.radius * 5.5f}, rotation, WHITE);
         }
     }
 }
