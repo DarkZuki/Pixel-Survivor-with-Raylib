@@ -34,6 +34,8 @@ public:
     void update() override;
     void draw() override;
     bool canShoot();
+    virtual float getVisualYOffset() const;
+    float getCollisionCenterY() const { return y - getVisualYOffset(); }
     
     // Getters
     int getHp() const { return hp; }
