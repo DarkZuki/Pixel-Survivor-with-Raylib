@@ -17,6 +17,7 @@ Music g_gameOverMusic = {};
 Music g_victoryMusic = {};
 Music* g_currentMusic = nullptr;
 AudioManager::MusicState g_currentMusicState = AudioManager::MusicState::MainMenu;
+bool g_hasMusicState = false;
 bool g_initialized = false;
 
 void PlayLoadedSound(const Sound& sound) {
@@ -77,6 +78,7 @@ void Shutdown() {
     UnloadMusicStream(g_gameOverMusic);
     UnloadMusicStream(g_victoryMusic);
     CloseAudioDevice();
+    g_hasMusicState = false;
     g_initialized = false;
 }
 
@@ -97,16 +99,19 @@ void Update() {
 
 void SetMusicState(MusicState state) {
     if (!g_initialized) return;
-    if (g_currentMusic != nullptr && g_currentMusicState == state) return;
+    if (g_currentMusic != nullptr && g_hasMusicState && g_currentMusicState == state) return;
 
     if (g_currentMusic != nullptr) {
         StopMusicStream(*g_currentMusic);
     }
 
     g_currentMusicState = state;
+    g_hasMusicState = true;
     g_currentMusic = GetMusicByState(state);
     if (g_currentMusic != nullptr) {
+        SeekMusicStream(*g_currentMusic, 0.0f);
         PlayMusicStream(*g_currentMusic);
+        UpdateMusicStream(*g_currentMusic);
     }
 }
 

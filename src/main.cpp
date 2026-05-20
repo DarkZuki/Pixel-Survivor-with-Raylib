@@ -348,6 +348,8 @@ int main() {
                 if (!gameStarted) continue;
             }
 
+            AudioManager::SetMusicState(AudioManager::MusicState::InGame);
+
             float dt = frameDt;
 
             // F5 chi ghi snapshot state hien tai, khong reset hay doi flow trong frame.
